@@ -25,9 +25,7 @@
 ## 데이터 구조
 
 - 스칼라: 한 개의 숫자로 이루어진 차원이 없는 데이터(Ex: 11)
-- 벡터: 스칼라의 집합, 여러 개의 숫자가 순서대로 모여있는 1차원 데이터(Ex: [5, 3, 7] 행벡터 / [5, 1.5, 2] 열벡터) 크기와 방향을 가짐.
-
-![image.png](attachment:eeb8a95c-cc52-4686-87d0-c13762a4c748:image.png)
+- 벡터: 스칼라의 집합, 여러 개의 숫자가 순서대로 모여있는 1차원 데이터(Ex: [5, 3, 7] 행벡터 / [5, 1, 2] 열벡터) 크기와 방향을 가짐.
 
 - 행렬: 벡터의 집합, 한 개 이상의 행과 열로 구성된 2차원 배열(데이터)
 
@@ -113,8 +111,6 @@ random_arr_1d = np.random.rand(5)
 random_arr_2d = np.random.rand(3, 4)
 ```
 
-![image.png](attachment:35684020-ebaf-4f5d-a06e-eb2adf9711e8:image.png)
-
 - np.linspace(): 지정한 범위 내에서 균일한 간격의 값들을 가진 배열 생성
 
 ```python
@@ -123,8 +119,6 @@ import numpy as np
 #0부터 1까지 5개의 값
 arr = np.linspace(0, 1, 5)
 ```
-
-![image.png](attachment:b99811e6-c96c-4b66-8284-9992dbad2dbe:2bbb5c33-17ff-48a5-a54d-7df634851bdc.png)
 
 - np.linspace(start, stop, num, endpoint=True, retstep=False, dtype-None, axis=0)
 - num: 생성할 샘플의 개수
@@ -154,8 +148,6 @@ print("열의 원소 최대값: ", np.max(arr, axis=1))
 print("열의 원소 최소값: ", np.min(arr, axis=1))
 ```
 
-![image.png](attachment:15820657-fa72-4411-884e-59f9e9a7ee70:image.png)
-
 - 인덱스의 최대, 최소값은 np.argmax(), np.argmin() 함수로 찾는다.
 - 분산 및 표준편차는 np.var(), np.std() 함수로 구할 수 있다.
 
@@ -182,8 +174,6 @@ print('shape: ', arr1.shape)
 print('ndim: ', arr1.ndim)
 ```
 
-![image.png](attachment:5e303bb1-6ec9-4130-9824-f13d15d2488d:image.png)
-
 - 배열의 인덱싱과 슬라이싱:  데이터 추출 시 가장 기본이 되는 연산
 
 ```
@@ -197,8 +187,6 @@ print(arr1[0, 2])
 print(arr1[1:])
 print(arr1[arr1>5])
 ```
-
-![image.png](attachment:316e9fd9-64a3-4a11-843b-86b534ef394d:image.png)
 
 - 배열의 변형: transpose(), flatten(), reshape()
 
@@ -216,8 +204,6 @@ print(arr_F)
 print(arr_R)
 ```
 
-![image.png](attachment:e822c749-fc01-46b5-a6a0-6f692bd175a4:image.png)
-
 - 연산자에 의한 기본 연산
 
 ```python
@@ -232,8 +218,6 @@ print(arr1 - arr2)
 print(arr1 > arr2)
 ```
 
-![image.png](attachment:3c1c6f1c-6995-4d04-9acc-5fa5954528c6:image.png)
-
 ```python
 import numpy as np
 
@@ -243,8 +227,5 @@ print(arr1 + 2)
 print(arr1 * 2)
 ```
 
-![image.png](attachment:fb02a7f7-3c07-461c-9673-150796fccf86:image.png)
-
 - 브로드캐스팅(broadcasting)
-    
-     일정 조건에 맞으면 서로 다른 모양의 배열끼리 연산할 수 있도록 하는 기능(조건: 한 배열의 차원이 1일 때, 첫 번째 배열의 행의 개수와 두 번째 배열의 열의 개수가 같을 때)
+일정 조건에 맞으면 서로 다른 모양의 배열끼리 연산할 수 있도록 하는 기능(조건: 한 배열의 차원이 1일 때, 첫 번째 배열의 행의 개수와 두 번째 배열의 열의 개수가 같을 때)
