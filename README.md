@@ -1,7 +1,7 @@
-#Deep Learning Dataset Comparison Project
+# Deep Learning Dataset Comparison Project
 다양한 데이터셋(IRIS, MNIST, Fashion-MNIST)을 활용하여 MLP 및 CNN 모델의 성능을 실험하고 비교 분석한 프로젝트입니다. 하이퍼파라미터 설정을 위한 Config 파일 생성부터 모델 학습, 결과 시각화 및 오분류 이미지 분석까지의 전 과정을 포함하고 있습니다.
 
-##주요 파일 구성 및 설명
+## 주요 파일 구성 및 설명
 models_py.ipynb:	MLP, Baseline CNN, Improved/Deep CNN 등 핵심 모델 구조 정의
 datasets_py.ipynb:	통합 데이터 로더 (IRIS, MNIST, Fashion-MNIST 데이터 처리)
 train_py.ipynb:	모델 학습 및 검증을 위한 코드(+손실 및 정확도 그래프 생성)
@@ -9,21 +9,21 @@ eval_py.ipynb / visualization_py.ipynb:	학습 결과 평가, 정확도 및 Conf
 config_*.ipynb:	각 데이터셋별 학습 환경 설정을 위한 YAML 설정 파일 생성
 compare_*.ipynb:	프로젝트의 핵심: 모델 간 정답/오답 이미지를 직접 비교 분석 (예: MLP는 틀렸지만 CNN은 맞춘 이미지 추출)
 
-##주요 실험 내용
+## 주요 실험 내용
 1. 데이터셋별 모델 적용
-*IRIS: 기본적인 분류 실험 및 데이터 학습 로직 검증.
-*MNIST: MLP 및 CNN 모델을 적용하여 수기 숫자 인식 성능 측정.
-*Fashion-MNIST: Baseline CNN 및 Dropout / Batch Normalizatio이 추가된 Improved CNN, Layer를 한 층 더 적층한 Deep CNN을 적용하여 의류 이미지 분류.
+* IRIS: 기본적인 분류 실험 및 데이터 학습 로직 검증.
+* MNIST: MLP 및 CNN 모델을 적용하여 수기 숫자 인식 성능 측정.
+* Fashion-MNIST: Baseline CNN 및 Dropout / Batch Normalizatio이 추가된 Improved CNN, Layer를 한 층 더 적층한 Deep CNN을 적용하여 의류 이미지 분류.
 
 2. 모델 성능 비교 및 분석
-*오분류 이미지 분석: 단순히 수치만 확인하는 것이 아니라, compare_fashion 및 compare_mnist 코드를 통해 모델이 실제 어떤 이미지를 헷갈려 하는지 시각적으로 대조.
-*구조적 개선: CNN 모델의 구조를 변경하며 정확도 향상을 실험.
+* 오분류 이미지 분석: 단순히 수치만 확인하는 것이 아니라, compare_fashion 및 compare_mnist 코드를 통해 모델이 실제 어떤 이미지를 헷갈려 하는지 시각적으로 대조.
+* 구조적 개선: CNN 모델의 구조를 변경하며 정확도 향상을 실험.
 
-##사용 기술 및 라이브러리
-*Language: Python
-*Framework: PyTorch
-*Environment: Google Colab (T4 GPU)
-*Configuration: YAML
+## 사용 기술 및 라이브러리
+* Language: Python
+* Framework: PyTorch
+* Environment: Google Colab (T4 GPU)
+* Configuration: YAML
 
 ### 🌸 IRIS 실험 결과 기록 (배치 사이즈 = 16 고정)
 
