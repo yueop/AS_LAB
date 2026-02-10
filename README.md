@@ -16,8 +16,8 @@ compare_*.ipynb:	프로젝트의 핵심: 모델 간 정답/오답 이미지를 �
 
 ## 주요 실험 내용
 1. 데이터셋별 모델 적용
-* IRIS: 기본적인 분류 실험 및 데이터 학습 로직 검증.
-* MNIST: MLP 및 CNN 모델을 적용하여 수기 숫자 인식 성능 측정.
+* IRIS: MLP 모델 적용하여 붓꽃 종류 분류
+* MNIST: MLP 및 CNN 모델을 적용하여 수기 숫자 분류.
 * Fashion-MNIST: Baseline CNN 및 Dropout / Batch Normalizatio이 추가된 Improved CNN, Layer를 한 층 더 적층한 Deep CNN을 적용하여 의류 이미지 분류.
 
 2. 모델 성능 비교 및 분석
@@ -32,7 +32,7 @@ compare_*.ipynb:	프로젝트의 핵심: 모델 간 정답/오답 이미지를 �
 
 ### 🌸 IRIS 실험 결과 기록 (배치 사이즈 = 16 고정)
 
-**Baseline:** [Kaggle Iris Classification Reference](https://www.kaggle.com/code/lukasaebi/iris-classification-100-without-id#Data-Preparation)
+**Kaggle Reference (Baseline):** [Kaggle Iris Classification Reference](https://www.kaggle.com/code/lukasaebi/iris-classification-100-without-id#Data-Preparation)
 
 | 실험 | 시드 | patience | LR | test_size(%) | 반복 | 종료 Epoch | Best Epoch | 틀린 개수(개) | 정확도(%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -48,7 +48,7 @@ compare_*.ipynb:	프로젝트의 핵심: 모델 간 정답/오답 이미지를 �
 ---
 
 ### 🔢 MNIST (데이터 분할 비율: 68.57% : 17.14% : 14.29%)
-**Kaggle Reference:** [Pytorch MLP MNIST](https://www.kaggle.com/code/ericle3121/pytorch-mlp-mnist)
+**Kaggle Reference (Baseline):** [Pytorch MLP MNIST](https://www.kaggle.com/code/ericle3121/pytorch-mlp-mnist)
 
 | 실험 | 모델 | 시드 | patience | Batch_size | LR | Epoch | 종료 Epoch | Best Epoch | Scheduler | 소요 시간 | 정확도(%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
