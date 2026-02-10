@@ -3,10 +3,15 @@
 
 ## 주요 파일 구성 및 설명
 models_py.ipynb:	MLP, Baseline CNN, Improved/Deep CNN 등 핵심 모델 구조 정의
+
 datasets_py.ipynb:	통합 데이터 로더 (IRIS, MNIST, Fashion-MNIST 데이터 처리)
+
 train_py.ipynb:	모델 학습 및 검증을 위한 코드(+손실 및 정확도 그래프 생성)
+
 eval_py.ipynb / visualization_py.ipynb:	학습 결과 평가, 정확도 및 Confusion Matrix, 오분류 이미지 시각화 / 그래프 및 Confusion Matrix 통합
+
 config_*.ipynb:	각 데이터셋별 학습 환경 설정을 위한 YAML 설정 파일 생성
+
 compare_*.ipynb:	프로젝트의 핵심: 모델 간 정답/오답 이미지를 직접 비교 분석 (예: MLP는 틀렸지만 CNN은 맞춘 이미지 추출)
 
 ## 주요 실험 내용
