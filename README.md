@@ -14,7 +14,7 @@
 
 ## 주요 실험 내용
 ### 1. 데이터셋별 모델 적용
-* **IRIS**: 정형 데이터에 MLP 모델을 적용하여 붓꽃 품종 분류 (Baseline vs Customized MLP).
+* **IRIS**: 정형 데이터에 MLP 모델을 적용하여 붓꽃 품종 분류.
 * **MNIST**: MLP와 CNN 모델을 각각 적용하여 2차원 이미지 데이터 처리에 대한 성능 차이 비교.
 * **Fashion-MNIST**:
     * **Baseline CNN**: 기본 구조.
