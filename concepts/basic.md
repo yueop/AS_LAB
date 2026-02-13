@@ -15,8 +15,8 @@
 ### nn.BatchNorm2d(): Batch Nomalization
 
 - 기능: 학습을 빠르고 안정적으로 만든다.
-- 원리: 정규화. 데이터가 층을 통과할 때마다 값의 분포가 제각각으로 튀는 현상이 발생한다. 이 층에서는 들어오는 데이터의 평균을 0, 분산을 1로 맞춘 뒤 스케일 해준다.
-
+- 원리: 미니배치 단위로 평균 0, 분산 1로 정규화한 뒤, **학습 가능한 파라미터(Scale, Shift)를 사용해 데이터의 분포를 모델이 학습하기 좋은 형태로 다시 조정한다.**
+  
 # 데이터를 다듬는 도구
 
 ## 학습되는 가중치는 없지만, 데이터를 변형하거나 학습을 돕는 역할
@@ -45,7 +45,8 @@
 - PyTorch에서의 nn.CrossEntropyLoss() 함수는 내부적으로 Softmax 함수 → Negative Log Likelihood 과정을 거친다.
     - Softmax: 모델의 출력 값(점수)을 확률로 변환해준다.
     - Negative Log Likelihood: 확률을 보고 틀린 만큼 Loss를 계산한다.
-
+- 주의사항: PyTorch의 CrossEntropyLoss는 정답(Target)으로 One-hot vector가 아닌 **클래스 인덱스(0, 1, 2...)**를 받는다. 굳이 One-hot encoding을 할 필요가 없다.
+  
 ## 점수 계산
 
 ### _, predicted = torch.max(outputs, 1)
@@ -92,6 +93,7 @@ if torch.cuda.is_available():
 
 1. Autograd: 미분 계산기. 딥러닝의 학습 원리는 ‘오차를 줄이는 방향으로 가중치를 조금씩 수정하는 것(경사 하강법)’이기 때문에 미분(기울기 계산)이 필수적이다. 복잡한 수식을 사람이 일일이 미분하는 것은 불가능하다. 
 - 역할: 연산 과정을 녹화해 두었다가, 필요할 때 자동으로 미분값을 구해주는 역할.
+- 주의점: PyTorch는 미분값(grad)을 자동으로 누적한다. 따라서 새로운 배치를 학습할 때마다 `optimizer.zero_grad()`를 호출하여 이전 미분값을 초기화해야 한다.
 
 ```python
 # requires_grad=True: "이 변수로 하는 모든 연산을 추적해! 나중에 미분할 거야"
