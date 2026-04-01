@@ -1,0 +1,14 @@
+model:
+  name: FCN8s
+  num_classes: 21
+paths:
+  save_path: ./saved_models/fcn8s_best.pth
+  sbd_dir: ./data/benchmark_RELEASE/benchmark_RELEASE/dataset
+  voc_dir: ./data/VOCtrainval_11-May-2012/VOCdevkit/VOC2012
+seed: 42
+train:
+  batch_size: 16
+  epochs: 100
+  learning_rate: 0.0001
+  momentum: 0.9
+  weight_decay: 0.0005

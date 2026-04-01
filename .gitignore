@@ -1,0 +1,12 @@
+**/data/
+# PyTorch 모델 가중치 파일 제외
+*.pth
+*.pt
+
+# 캐시 및 학습 결과물 폴더 제외
+__pycache__/
+FCN_Project/results/
+FCN_Project/saved_models/
+
+# (선택) 시각화 이미지 제외
+*.png
