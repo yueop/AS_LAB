@@ -1,0 +1,10 @@
+langchain
+langchain-community
+chromadb
+ollama
+torch
+torchvision
+numpy
+opencv-python
+pillow
+tqdm
