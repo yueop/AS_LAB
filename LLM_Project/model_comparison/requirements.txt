@@ -4,6 +4,7 @@ chromadb
 ollama
 torch
 torchvision
+torchxrayvision
 numpy
 opencv-python
 pillow

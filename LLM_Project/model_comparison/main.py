@@ -20,7 +20,11 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
     data_loader = MedicalImageDataLoader(
         image_dir=config.image_dir,
         mask_dir=config.mask_dir,
+        chexmask_csv=config.chexmask_csv,
+        target_organ=config.target_organ,
         image_size=config.image_size,
+        split_file=config.split_file,
+        split_name=config.split_name,
         image_exts=config.supported_image_exts,
         mask_exts=config.supported_mask_exts,
     )
@@ -156,6 +160,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Medical segmentation dynamic routing pipeline")
     parser.add_argument("--image-dir", type=Path, default=None, help="Input X-ray/medical image folder")
     parser.add_argument("--mask-dir", type=Path, default=None, help="Optional ground-truth mask folder")
+    parser.add_argument("--chexmask-csv", type=Path, default=None, help="Optional CheXmask RLE CSV")
+    parser.add_argument("--split-file", type=Path, default=None, help="Optional JSON split file")
+    parser.add_argument("--split-name", default=None, help="Split name to run, e.g. train/val/test")
     parser.add_argument("--output-dir", type=Path, default=None, help="Output mask folder")
     parser.add_argument("--chroma-dir", type=Path, default=None, help="ChromaDB persistence folder")
     parser.add_argument("--llm-model", default=None, help="Ollama model name, e.g. llama3")
@@ -170,7 +177,18 @@ def parse_args() -> argparse.Namespace:
 def build_config(args: argparse.Namespace) -> PipelineConfig:
     config = PipelineConfig()
     updates: dict[str, Any] = {}
-    for field_name in ("image_dir", "mask_dir", "output_dir", "chroma_dir", "llm_model", "target_organ", "top_k"):
+    for field_name in (
+        "image_dir",
+        "mask_dir",
+        "chexmask_csv",
+        "split_file",
+        "split_name",
+        "output_dir",
+        "chroma_dir",
+        "llm_model",
+        "target_organ",
+        "top_k",
+    ):
         value = getattr(args, field_name)
         if value is not None:
             updates[field_name] = value

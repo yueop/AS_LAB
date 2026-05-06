@@ -1,0 +1,138 @@
+[
+  {
+    "name": "cxr_basic_anatomy_lung",
+    "target_organ": "lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.9525,
+      "iou": 0.9093
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "cxr_basic_anatomy_lung_mask"
+  },
+  {
+    "name": "cxr_basic_anatomy_right_lung",
+    "target_organ": "right_lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.957,
+      "iou": 0.9175
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "cxr_basic_anatomy_right_lung_mask"
+  },
+  {
+    "name": "cxr_basic_anatomy_left_lung",
+    "target_organ": "left_lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.948,
+      "iou": 0.9011
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "cxr_basic_anatomy_left_lung_mask"
+  },
+  {
+    "name": "cxr_basic_anatomy_heart",
+    "target_organ": "heart",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.943,
+      "iou": 0.8921
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "cxr_basic_anatomy_heart_mask"
+  },
+  {
+    "name": "torchxrayvision_pspnet_lung",
+    "target_organ": "lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.8495011943385737,
+      "iou": 0.7394710176407835
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "torchxrayvision_pspnet_lung_mask"
+  },
+  {
+    "name": "sam_med2d_box_prompt",
+    "target_organ": "lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.793,
+      "iou": 0.657
+    },
+    "runtime": {
+      "speed": "slow",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "sam_med2d_box_prompt_mask"
+  },
+  {
+    "name": "unet_lung_baseline",
+    "target_organ": "lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.5293563483894628,
+      "iou": 0.3648581209341344
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda"
+    },
+    "model_path": null,
+    "output_suffix": "unet_lung_baseline_mask"
+  },
+  {
+    "name": "threshold_baseline",
+    "target_organ": "lung",
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.13153506799768888,
+      "iou": 0.07116057698378923
+    },
+    "runtime": {
+      "speed": "fast",
+      "device": "cpu"
+    },
+    "model_path": null,
+    "output_suffix": "threshold_baseline_mask"
+  }
+]

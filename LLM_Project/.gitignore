@@ -1,1 +1,15 @@
 indiana/
+nih_sample_data/
+chestX-ray8.csv
+Data_Entry_2017.csv.zip
+sample.zip
+outputs/
+chroma_db/
+model_comparison/chroma_db/
+model_comparison/metrics_history.jsonl
+__pycache__/
+*.pyc
+*.pth
+*.pt
+*.ckpt
+*.safetensors

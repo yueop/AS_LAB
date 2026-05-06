@@ -68,11 +68,21 @@ DO NOT select any model that has null metrics or explicitly lists an "error".
 
         valid_names = {c["model_name"] for c in candidates}
         
-        # 리스트 형태의 candidates를 LLM이 읽기 편한 문자열로 변환
-        candidates_str = "\n".join([
-            f"- Model Name: {c['model_name']}, Metrics: {json.dumps(c.get('metrics', {}))}" 
-            for c in candidates
-        ])
+        candidates_str = "\n".join(
+            [
+                "- Model Name: {model_name}, Target Organs: {target_organs}, "
+                "DSC: {dsc:.4f}, IoU: {iou:.4f}, Eval Count: {eval_count}, "
+                "Description: {description}".format(
+                    model_name=c["model_name"],
+                    target_organs=c.get("target_organs", ""),
+                    dsc=float(c.get("dsc", 0.0) or 0.0),
+                    iou=float(c.get("iou", 0.0) or 0.0),
+                    eval_count=int(c.get("eval_count", 0) or 0),
+                    description=c.get("description", ""),
+                )
+                for c in candidates
+            ]
+        )
         
         metadata_json = json.dumps(sample_metadata or {}, ensure_ascii=False)
 
@@ -94,10 +104,13 @@ DO NOT select any model that has null metrics or explicitly lists an "error".
         except Exception as e:
             print(f"[Router Error] Parsing failed: {str(e)}")
 
-        # Fallback 로직 (에러 시 무조건 점수 높은 거 선택)
-        best_candidate = max(candidates, key=lambda c: (
-            c.get("metrics", {}).get("dsc", 0.0) if c.get("metrics") else 0.0
-        ))
+        best_candidate = max(
+            candidates,
+            key=lambda c: (
+                float(c.get("dsc", 0.0) or 0.0),
+                float(c.get("iou", 0.0) or 0.0),
+            ),
+        )
         
         print(f"[Fallback] Selected {best_candidate['model_name']} automatically.")
         return {

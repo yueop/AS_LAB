@@ -22,6 +22,9 @@ def _optional_path_from_env(name: str) -> Path | None:
 class PipelineConfig:
     image_dir: Path = _path_from_env("IMAGE_DIR", ROOT_DIR / "data" / "images")
     mask_dir: Path | None = _optional_path_from_env("MASK_DIR")
+    chexmask_csv: Path | None = _optional_path_from_env("CHEXMASK_CSV")
+    split_file: Path | None = _optional_path_from_env("SPLIT_FILE")
+    split_name: str | None = os.getenv("SPLIT_NAME")
     output_dir: Path = _path_from_env("OUTPUT_DIR", ROOT_DIR / "outputs")
     chroma_dir: Path = _path_from_env("CHROMA_DIR", ROOT_DIR / "chroma_db")
     llm_model: str = os.getenv("LLM_MODEL", "llama3")
