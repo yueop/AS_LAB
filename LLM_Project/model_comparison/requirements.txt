@@ -9,3 +9,7 @@ numpy
 opencv-python
 pillow
 tqdm
+transformers<5
+timm
+safetensors
+albumentations
