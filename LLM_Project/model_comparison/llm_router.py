@@ -13,7 +13,14 @@ from config import PipelineConfig
 
 # 1. Pydantic 모델을 조금 더 명확하게 정의 (설명을 추가하여 LLM 이해도 향상)
 class RoutingDecision(BaseModel):
-    selected_model: str = Field(description="The exact name of the selected model. MUST be exactly one of the names from the Candidate Models list (e.g., 'unet_lung', 'medsam').")
+    selected_model: str = Field(
+        description=(
+            "The exact name of the selected model. MUST be exactly one of the "
+            "names from the Candidate Models list (e.g., "
+            "'cxr_basic_anatomy_lung', 'torchxrayvision_pspnet_lung', "
+            "'sam_med2d_box_prompt')."
+        )
+    )
     target_organ: str = Field(description="The target organ requested by the user.")
     reason: str = Field(description="A brief explanation of why this model was chosen based on the DSC and IoU metrics.")
 
