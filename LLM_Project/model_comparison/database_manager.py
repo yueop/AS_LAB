@@ -148,7 +148,7 @@ class DatabaseManager:
         self.config = config
         self.metrics_path = config.output_dir / "metrics_history.jsonl"
         self._collection = None
-        self._fallback_specs = [dict(spec) for spec in MODEL_SPECS]
+        self._fallback_specs = _load_specs_from_registry(config.model_registry_path)
         self._metric_aggregates = self._load_metric_aggregates()
         self._apply_aggregate_metrics_to_specs()
 
@@ -164,16 +164,26 @@ class DatabaseManager:
         if self._collection is None:
             return
 
-        ids = [spec["model_name"] for spec in MODEL_SPECS]
-        existing = set(self._collection.get(ids=ids).get("ids", []))
-        new_specs = [spec for spec in MODEL_SPECS if spec["model_name"] not in existing]
+        ids = [spec["model_name"] for spec in self._fallback_specs]
+        desired_ids = set(ids)
+        try:
+            all_existing_ids = set(self._collection.get().get("ids", []))
+            stale_ids = sorted(all_existing_ids - desired_ids)
+            if stale_ids:
+                self._collection.delete(ids=stale_ids)
+        except Exception:
+            pass
 
-        if new_specs:
+        if ids:
+            try:
+                self._collection.delete(ids=ids)
+            except Exception:
+                pass
             self._collection.add(
-                ids=[spec["model_name"] for spec in new_specs],
-                documents=[_model_document(spec) for spec in new_specs],
-                metadatas=new_specs,
-                embeddings=[_embed_text(_model_document(spec)) for spec in new_specs],
+                ids=ids,
+                documents=[_model_document(spec) for spec in self._fallback_specs],
+                metadatas=self._fallback_specs,
+                embeddings=[_embed_text(_model_document(spec)) for spec in self._fallback_specs],
             )
 
         self._sync_aggregate_metrics_to_collection()
@@ -375,6 +385,58 @@ def _model_document(spec: dict[str, Any]) -> str:
         f"{spec['model_name']} {spec['description']} "
         f"organs:{spec['target_organs']} dsc:{spec.get('dsc', 0.0)} iou:{spec.get('iou', 0.0)}"
     )
+
+
+def _load_specs_from_registry(registry_path: Path) -> list[dict[str, Any]]:
+    if not registry_path.exists():
+        return [dict(spec) for spec in MODEL_SPECS]
+
+    with registry_path.open("r", encoding="utf-8") as file:
+        registry = json.load(file)
+    if not isinstance(registry, list):
+        raise ValueError(f"Model registry must be a JSON list: {registry_path}")
+
+    specs = [_registry_item_to_spec(item) for item in registry if isinstance(item, dict)]
+    return specs or [dict(spec) for spec in MODEL_SPECS]
+
+
+def _registry_item_to_spec(item: dict[str, Any]) -> dict[str, Any]:
+    model_name = str(item["name"])
+    target_organ = str(item.get("target_organ", "generic"))
+    modality = str(item.get("modality", "medical_image"))
+    metrics = item.get("validation_metrics") or {}
+    aliases = item.get("target_organs")
+    if isinstance(aliases, list):
+        target_organs = ",".join(str(alias) for alias in aliases)
+    elif aliases:
+        target_organs = str(aliases)
+    else:
+        target_organs = _default_target_organs(target_organ, modality)
+
+    return {
+        "model_name": model_name,
+        "description": str(item.get("description") or _default_description(model_name, target_organ, modality)),
+        "target_organs": target_organs,
+        "dsc": float(metrics.get("dsc", 0.0) or 0.0),
+        "iou": float(metrics.get("iou", 0.0) or 0.0),
+        "eval_count": int(item.get("eval_count", 0) or 0),
+    }
+
+
+def _default_description(model_name: str, target_organ: str, modality: str) -> str:
+    readable_name = model_name.replace("_", " ")
+    return f"{readable_name} model for {target_organ} segmentation on {modality} images."
+
+
+def _default_target_organs(target_organ: str, modality: str) -> str:
+    aliases = [target_organ, modality]
+    if target_organ == "lung":
+        aliases.extend(["lungs", "chest"])
+    elif target_organ in {"left_lung", "right_lung"}:
+        aliases.extend([target_organ.replace("_", " "), "lung", "chest"])
+    elif target_organ == "heart":
+        aliases.extend(["cardiac", "chest"])
+    return ",".join(dict.fromkeys(aliases))
 
 
 def _embed_text(text: str, dims: int = 64) -> list[float]:

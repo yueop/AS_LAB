@@ -4,8 +4,14 @@ import argparse
 import json
 from dataclasses import replace
 from pathlib import Path
+import sys
 from typing import Any
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from calculate_average import summarize_pipeline_results, write_average_outputs
 from config import PipelineConfig, ensure_runtime_dirs
 from data_loader import MedicalImageDataLoader, iter_limited
 from database_manager import DatabaseManager
@@ -165,12 +171,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split-name", default=None, help="Split name to run, e.g. train/val/test")
     parser.add_argument("--output-dir", type=Path, default=None, help="Output mask folder")
     parser.add_argument("--chroma-dir", type=Path, default=None, help="ChromaDB persistence folder")
+    parser.add_argument("--model-registry-path", type=Path, default=None, help="Model registry JSON path")
     parser.add_argument("--llm-model", default=None, help="Ollama model name, e.g. llama3")
     parser.add_argument("--target-organ", default=None, help="Target organ for routing")
     parser.add_argument("--query", default=None, help="User routing query")
     parser.add_argument("--top-k", type=int, default=None, help="Number of RAG candidates")
     parser.add_argument("--limit", type=int, default=None, help="Maximum images to process")
     parser.add_argument("--image-size", nargs=2, type=int, metavar=("HEIGHT", "WIDTH"), default=None)
+    parser.add_argument(
+        "--results-json",
+        type=Path,
+        default=None,
+        help="Optional path for the full pipeline result JSON. Defaults to output-dir/pipeline_results.json.",
+    )
+    parser.add_argument(
+        "--skip-average",
+        action="store_true",
+        help="Do not calculate average DSC/IoU summary after the pipeline finishes.",
+    )
     return parser.parse_args()
 
 
@@ -185,6 +203,7 @@ def build_config(args: argparse.Namespace) -> PipelineConfig:
         "split_name",
         "output_dir",
         "chroma_dir",
+        "model_registry_path",
         "llm_model",
         "target_organ",
         "top_k",
@@ -201,7 +220,26 @@ def main() -> None:
     args = parse_args()
     config = build_config(args)
     results = run_pipeline(config, query=args.query, limit=args.limit)
-    print(json.dumps(results, indent=2, ensure_ascii=False))
+
+    results_json = args.results_json or (config.output_dir / "pipeline_results.json")
+    results_json.parent.mkdir(parents=True, exist_ok=True)
+    results_json.write_text(
+        json.dumps(results, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    response: dict[str, Any] = {
+        "results_json": str(results_json),
+        "results": results,
+    }
+    if not args.skip_average:
+        average_summary = summarize_pipeline_results(results)
+        average_json, average_md = write_average_outputs(average_summary, config.output_dir)
+        response["average_summary"] = average_summary
+        response["average_summary_json"] = str(average_json)
+        response["average_summary_md"] = str(average_md)
+
+    print(json.dumps(response, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

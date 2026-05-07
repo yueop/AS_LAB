@@ -13,3 +13,4 @@ transformers<5
 timm
 safetensors
 albumentations
+langchain-ollama<0.3

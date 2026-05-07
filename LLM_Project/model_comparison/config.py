@@ -27,6 +27,10 @@ class PipelineConfig:
     split_name: str | None = os.getenv("SPLIT_NAME")
     output_dir: Path = _path_from_env("OUTPUT_DIR", ROOT_DIR / "outputs")
     chroma_dir: Path = _path_from_env("CHROMA_DIR", ROOT_DIR / "chroma_db")
+    model_registry_path: Path = _path_from_env(
+        "MODEL_REGISTRY",
+        ROOT_DIR.parent / "configs" / "model_registry.json",
+    )
     llm_model: str = os.getenv("LLM_MODEL", "llama3")
     target_organ: str = os.getenv("TARGET_ORGAN", "lung")
     top_k: int = int(os.getenv("TOP_K", "3"))
