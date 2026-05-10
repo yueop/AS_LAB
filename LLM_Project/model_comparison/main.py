@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 from typing import Any
 
+import numpy as np
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -15,12 +17,16 @@ from calculate_average import summarize_pipeline_results, write_average_outputs
 from config import PipelineConfig, ensure_runtime_dirs
 from data_loader import MedicalImageDataLoader, iter_limited
 from database_manager import DatabaseManager
-from evaluator import evaluate_prediction
+from evaluator import calculate_dsc, calculate_iou, evaluate_prediction
 from llm_router import LLMRouter
 from vision_wrappers import execute_model
 
 
 def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | None = None) -> list[dict[str, Any]]:
+    effective_target_organ = _infer_target_organ_from_query(query, config.target_organ)
+    if effective_target_organ != config.target_organ:
+        config = replace(config, target_organ=effective_target_organ)
+
     ensure_runtime_dirs(config)
 
     data_loader = MedicalImageDataLoader(
@@ -41,20 +47,23 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
     results: list[dict[str, Any]] = []
     for sample in iter_limited(data_loader, limit):
         sample_query = query or f"{config.target_organ} segmentation for {sample.sample_id}"
-        candidates = database.retrieve_top_models(sample_query, top_k=config.top_k)
-        decision = router.select_model(sample_query, candidates, sample.metadata)
-        target_organ = decision["target_organ"]
-
-        models_to_run = candidates
-        if sample.true_mask is None:
-            models_to_run = [
-                candidate
-                for candidate in candidates
-                if candidate["model_name"] == decision["selected_model"]
-            ]
+        candidates = database.retrieve_models_for_organ(
+            target_organ=config.target_organ,
+            query=sample_query,
+            top_k=config.top_k,
+        )
+        target_organ = config.target_organ
+        models_to_run = [
+            candidate
+            for candidate in candidates
+            if _candidate_can_run(candidate)
+        ]
+        if not models_to_run:
+            models_to_run = [candidates[0]]
 
         candidate_results: list[dict[str, Any]] = []
         predicted_masks: dict[str, Any] = {}
+        candidate_mask_paths: dict[str, str] = {}
         for model in models_to_run:
             model_name = model["model_name"]
             try:
@@ -65,11 +74,15 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
                     image=sample.image,
                 )
                 predicted_masks[model_name] = pred_mask
+                candidate_output_path = config.output_dir / f"{sample.sample_id}_{model_name}_candidate_mask.png"
+                saved_candidate_mask = MedicalImageDataLoader.save_mask(pred_mask, candidate_output_path)
+                candidate_mask_paths[model_name] = str(saved_candidate_mask)
                 metrics = evaluate_prediction(pred_mask, sample.true_mask)
                 candidate_results.append(
                     {
                         "model_name": model_name,
                         "metrics": metrics,
+                        "mask_path": str(saved_candidate_mask),
                     }
                 )
             except Exception as exc:
@@ -80,6 +93,15 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
                         "error": str(exc),
                     }
                 )
+
+        consensus_mask, overlap_scores = _score_masks_against_consensus(predicted_masks)
+        scored_candidates = _attach_inference_scores(candidates, candidate_results, overlap_scores)
+        decision = router.select_model(
+            sample_query,
+            scored_candidates,
+            sample.metadata,
+            target_organ=target_organ,
+        )
 
         valid_results = [
             result
@@ -131,6 +153,11 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
             output_path = config.output_dir / f"{sample.sample_id}_{decision['selected_model']}_mask.png"
             saved_mask_path = MedicalImageDataLoader.save_mask(selected_mask, output_path)
 
+        consensus_mask_path = None
+        if consensus_mask is not None:
+            consensus_output_path = config.output_dir / f"{sample.sample_id}_{target_organ}_consensus_mask.png"
+            consensus_mask_path = MedicalImageDataLoader.save_mask(consensus_mask, consensus_output_path)
+
         best_mask_path = None
         if best_dsc_result is not None:
             best_model_name = best_dsc_result["model_name"]
@@ -144,22 +171,157 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
                 "sample_id": sample.sample_id,
                 "image_path": str(sample.image_path),
                 "mask_path": str(saved_mask_path) if saved_mask_path else None,
+                "candidate_mask_paths": candidate_mask_paths,
+                "consensus_mask_path": str(consensus_mask_path) if consensus_mask_path else None,
                 "best_mask_path": str(best_mask_path) if best_mask_path else None,
                 "selected_model": decision["selected_model"],
+                "selected_score": decision.get("selected_score"),
                 "best_model_by_dsc": best_dsc_result["model_name"] if best_dsc_result else None,
                 "best_model_by_iou": best_iou_result["model_name"] if best_iou_result else None,
                 "router_matched_best_dsc": (
-                    best_dsc_result is not None
-                    and decision["selected_model"] == best_dsc_result["model_name"]
+                    None
+                    if best_dsc_result is None
+                    else decision["selected_model"] == best_dsc_result["model_name"]
                 ),
                 "target_organ": target_organ,
                 "router_reason": decision["reason"],
                 "metrics": selected_result.get("metrics") if selected_result else None,
+                "candidate_scorecard": scored_candidates,
                 "candidate_metrics": candidate_results,
+                "overlap_scores": overlap_scores,
             }
         )
 
     return results
+
+
+def _infer_target_organ_from_query(query: str | None, fallback: str) -> str:
+    if not query:
+        return fallback
+
+    normalized = query.lower().replace("-", " ").replace("_", " ")
+    heart_terms = ("심장", "heart", "cardiac", "cardiac silhouette")
+    lung_terms = ("폐", "허파", "lung", "lungs")
+    if any(term in normalized for term in heart_terms):
+        return "heart"
+    if any(term in normalized for term in lung_terms):
+        return "lung"
+    return fallback
+
+
+def _candidate_can_run(candidate: dict[str, Any]) -> bool:
+    if not bool(candidate.get("selection_enabled", True)):
+        return False
+    if not bool(candidate.get("pretrained_weight_available", True)):
+        return False
+
+    wrapper_status = str(candidate.get("wrapper_status") or "implemented")
+    if wrapper_status != "implemented":
+        return False
+
+    return True
+
+
+def _score_masks_against_consensus(
+    predicted_masks: dict[str, Any],
+) -> tuple[Any | None, dict[str, dict[str, float | bool]]]:
+    binary_masks = {
+        model_name: (np.asarray(mask) > 0)
+        for model_name, mask in predicted_masks.items()
+    }
+    if not binary_masks:
+        return None, {}
+
+    names = list(binary_masks)
+    stack = np.stack([binary_masks[name] for name in names], axis=0)
+    majority_threshold = (len(names) // 2) + 1
+    consensus = (stack.sum(axis=0) >= majority_threshold).astype("uint8")
+
+    scores: dict[str, dict[str, float | bool]] = {}
+    for name in names:
+        mask = binary_masks[name].astype("uint8")
+        pairwise_ious = [
+            calculate_iou(mask, binary_masks[other].astype("uint8"))
+            for other in names
+            if other != name
+        ]
+        avg_pairwise_iou = sum(pairwise_ious) / len(pairwise_ious) if pairwise_ious else 1.0
+        consensus_iou = calculate_iou(mask, consensus)
+        consensus_dsc = calculate_dsc(mask, consensus)
+        mask_area_fraction = float(mask.mean()) if mask.size else 0.0
+        mask_empty = bool(mask.sum() == 0)
+        overlap_score = 0.0 if mask_empty else (0.7 * consensus_iou) + (0.3 * avg_pairwise_iou)
+        scores[name] = {
+            "consensus_iou": consensus_iou,
+            "consensus_dsc": consensus_dsc,
+            "avg_pairwise_iou": avg_pairwise_iou,
+            "overlap_score": overlap_score,
+            "mask_area_fraction": mask_area_fraction,
+            "mask_empty": mask_empty,
+        }
+
+    return consensus, scores
+
+
+def _attach_inference_scores(
+    candidates: list[dict[str, Any]],
+    candidate_results: list[dict[str, Any]],
+    overlap_scores: dict[str, dict[str, float | bool]],
+) -> list[dict[str, Any]]:
+    result_by_model = {result["model_name"]: result for result in candidate_results}
+    scored: list[dict[str, Any]] = []
+
+    for candidate in candidates:
+        enriched = dict(candidate)
+        model_name = str(enriched["model_name"])
+        prior_score = float(enriched.get("routing_score", enriched.get("score", 0.0)) or 0.0)
+        enriched["prior_routing_score"] = prior_score
+
+        result = result_by_model.get(model_name)
+        if result is None:
+            enriched["execution_status"] = "not_run"
+            if not _candidate_can_run(enriched):
+                enriched["selection_enabled"] = False
+            enriched["routing_score"] = 0.0
+            scored.append(enriched)
+            continue
+
+        if result.get("error"):
+            enriched["execution_status"] = "error"
+            enriched["error"] = result["error"]
+            enriched["selection_enabled"] = False
+            enriched["routing_score"] = 0.0
+            scored.append(enriched)
+            continue
+
+        model_overlap = overlap_scores.get(model_name, {})
+        overlap_score = float(model_overlap.get("overlap_score", 0.0) or 0.0)
+        if len(overlap_scores) <= 1:
+            final_score = prior_score if prior_score > 0 else overlap_score
+        elif prior_score > 0:
+            final_score = (0.6 * prior_score) + (0.4 * overlap_score)
+        else:
+            final_score = overlap_score
+        if bool(model_overlap.get("mask_empty", False)):
+            final_score = 0.0
+
+        enriched.update(model_overlap)
+        enriched["execution_status"] = "success"
+        enriched["mask_path"] = result.get("mask_path")
+        enriched["overlap_score"] = overlap_score
+        enriched["routing_score"] = final_score
+        enriched["score"] = final_score
+        scored.append(enriched)
+
+    return sorted(
+        scored,
+        key=lambda item: (
+            int(item.get("execution_status") == "success"),
+            float(item.get("routing_score", 0.0) or 0.0),
+            float(item.get("prior_routing_score", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )
 
 
 def parse_args() -> argparse.Namespace:

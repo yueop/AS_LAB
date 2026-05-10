@@ -1,0 +1,104 @@
+[
+  {
+    "sample_id": "00000032_001",
+    "target_organ": "heart",
+    "label": "",
+    "gt_mask_path": "docs\\figure_candidates\\heart_panels\\00000032_001_chexmask_gt_heart.png",
+    "experiments": [
+      {
+        "experiment_name": "exp4",
+        "display_name": "Exp4 initial",
+        "experiment_dir": "outputs\\experiment4_nih_chexmask_heart_50",
+        "model_name": "torchxrayvision_pspnet_heart",
+        "dsc": 0.6926635033914862,
+        "iou": 0.5298280168790446
+      },
+      {
+        "experiment_name": "exp5",
+        "display_name": "Exp5 calibrated",
+        "experiment_dir": "outputs\\experiment5_heart_calibrated",
+        "model_name": "cxr_basic_anatomy_heart",
+        "dsc": 0.9243098842386723,
+        "iou": 0.8592715231788972
+      },
+      {
+        "experiment_name": "exp6",
+        "display_name": "Exp6 refined",
+        "experiment_dir": "outputs\\experiment6_heart_registry_calibrated",
+        "model_name": "cxr_basic_anatomy_heart",
+        "dsc": 0.9243098842386723,
+        "iou": 0.8592715231788972
+      }
+    ],
+    "full_panel_path": "docs\\figure_candidates\\heart_panels\\00000032_001_heart_panel.png",
+    "compact_panel_path": "docs\\figure_candidates\\heart_panels\\00000032_001_heart_panel_compact.png"
+  },
+  {
+    "sample_id": "00000099_006",
+    "target_organ": "heart",
+    "label": "",
+    "gt_mask_path": "docs\\figure_candidates\\heart_panels\\00000099_006_chexmask_gt_heart.png",
+    "experiments": [
+      {
+        "experiment_name": "exp4",
+        "display_name": "Exp4 initial",
+        "experiment_dir": "outputs\\experiment4_nih_chexmask_heart_50",
+        "model_name": "torchxrayvision_pspnet_heart",
+        "dsc": 0.18445678609083127,
+        "iou": 0.10159867563511041
+      },
+      {
+        "experiment_name": "exp5",
+        "display_name": "Exp5 calibrated",
+        "experiment_dir": "outputs\\experiment5_heart_calibrated",
+        "model_name": "torchxrayvision_pspnet_heart",
+        "dsc": 0.18445678609083127,
+        "iou": 0.10159867563511041
+      },
+      {
+        "experiment_name": "exp6",
+        "display_name": "Exp6 refined",
+        "experiment_dir": "outputs\\experiment6_heart_registry_calibrated",
+        "model_name": "cxr_basic_anatomy_heart",
+        "dsc": 0.8916343276702128,
+        "iou": 0.804458627626095
+      }
+    ],
+    "full_panel_path": "docs\\figure_candidates\\heart_panels\\00000099_006_heart_panel.png",
+    "compact_panel_path": "docs\\figure_candidates\\heart_panels\\00000099_006_heart_panel_compact.png"
+  },
+  {
+    "sample_id": "00000116_040",
+    "target_organ": "heart",
+    "label": "",
+    "gt_mask_path": "docs\\figure_candidates\\heart_panels\\00000116_040_chexmask_gt_heart.png",
+    "experiments": [
+      {
+        "experiment_name": "exp4",
+        "display_name": "Exp4 initial",
+        "experiment_dir": "outputs\\experiment4_nih_chexmask_heart_50",
+        "model_name": "torchxrayvision_pspnet_heart",
+        "dsc": 0.7697272317845387,
+        "iou": 0.6256557502294325
+      },
+      {
+        "experiment_name": "exp5",
+        "display_name": "Exp5 calibrated",
+        "experiment_dir": "outputs\\experiment5_heart_calibrated",
+        "model_name": "cxr_basic_anatomy_heart",
+        "dsc": 0.92284441072114,
+        "iou": 0.8567419785093586
+      },
+      {
+        "experiment_name": "exp6",
+        "display_name": "Exp6 refined",
+        "experiment_dir": "outputs\\experiment6_heart_registry_calibrated",
+        "model_name": "cxr_basic_anatomy_heart",
+        "dsc": 0.92284441072114,
+        "iou": 0.8567419785093586
+      }
+    ],
+    "full_panel_path": "docs\\figure_candidates\\heart_panels\\00000116_040_heart_panel.png",
+    "compact_panel_path": "docs\\figure_candidates\\heart_panels\\00000116_040_heart_panel_compact.png"
+  }
+]

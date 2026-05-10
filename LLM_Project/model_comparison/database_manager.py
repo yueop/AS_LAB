@@ -12,30 +12,6 @@ from config import PipelineConfig
 
 MODEL_SPECS = [
     {
-        "model_name": "threshold_baseline",
-        "description": "Lightweight local baseline for simple high-contrast segmentation masks.",
-        "target_organs": "lung,bone,generic",
-        "dsc": 0.0,
-        "iou": 0.0,
-        "eval_count": 0,
-    },
-    {
-        "model_name": "unet_lung",
-        "description": "U-Net style wrapper intended for chest X-ray lung field segmentation.",
-        "target_organs": "lung,chest",
-        "dsc": 0.85,
-        "iou": 0.74,
-        "eval_count": 0,
-    },
-    {
-        "model_name": "medsam",
-        "description": "General medical segmentation wrapper for organ-aware prompts.",
-        "target_organs": "liver,spleen,kidney,lesion,generic",
-        "dsc": 0.8,
-        "iou": 0.68,
-        "eval_count": 0,
-    },
-    {
         "model_name": "cxr_basic_anatomy_lung",
         "description": "Pretrained CXR anatomy segmentation model for combined left and right lung masks.",
         "target_organs": "lung,lungs,chest,cxr",
@@ -65,23 +41,6 @@ MODEL_SPECS = [
         "target_organs": "heart,cardiac,chest,cxr",
         "dsc": 0.943,
         "iou": 0.8921,
-        "eval_count": 0,
-    },
-    # --- New Models Added Below ---
-    {
-        "model_name": "segresnet_lung",
-        "description": "SegResNet architecture, excellent for capturing multi-scale features in medical images.",
-        "target_organs": "lung,chest",
-        "dsc": 0.0, # Initial fallback values, these will update as the pipeline runs
-        "iou": 0.0,
-        "eval_count": 0,
-    },
-    {
-        "model_name": "attention_unet_lung",
-        "description": "Attention U-Net architecture, excellent for focusing on relevant medical features.",
-        "target_organs": "lung,chest",
-        "dsc": 0.0,
-        "iou": 0.0,
         "eval_count": 0,
     },
     {
@@ -128,16 +87,39 @@ class RetrievedModel:
     iou: float
     eval_count: int
     score: float
+    retrieval_score: float = 0.0
+    original_name: str | None = None
+    source_url: str | None = None
+    architecture: str | None = None
+    framework: str | None = None
+    modality: str | None = None
+    pretrained_weight_available: bool = False
+    weight_status: str | None = None
+    weight_action: str | None = None
+    wrapper_status: str = "unknown"
+    selection_enabled: bool = True
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "model_name": self.model_name,
+            "original_name": self.original_name or self.model_name,
             "description": self.description,
             "target_organs": self.target_organs,
+            "modality": self.modality,
+            "architecture": self.architecture,
+            "framework": self.framework,
+            "source_url": self.source_url,
+            "pretrained_weight_available": self.pretrained_weight_available,
+            "weight_status": self.weight_status or "",
+            "weight_action": self.weight_action or "",
+            "wrapper_status": self.wrapper_status,
+            "selection_enabled": self.selection_enabled,
             "dsc": self.dsc,
             "iou": self.iou,
             "eval_count": self.eval_count,
             "score": self.score,
+            "routing_score": self.score,
+            "retrieval_score": self.retrieval_score,
         }
 
 
@@ -206,7 +188,22 @@ class DatabaseManager:
                         dsc=float(metadata.get("dsc", 0.0)),
                         iou=float(metadata.get("iou", 0.0)),
                         eval_count=int(metadata.get("eval_count", 0)),
-                        score=1.0 / (1.0 + float(distance)),
+                        score=_routing_score(
+                            float(metadata.get("dsc", 0.0)),
+                            float(metadata.get("iou", 0.0)),
+                            bool(metadata.get("selection_enabled", True)),
+                        ),
+                        retrieval_score=1.0 / (1.0 + float(distance)),
+                        original_name=str(metadata.get("original_name") or metadata["model_name"]),
+                        source_url=str(metadata.get("source_url") or ""),
+                        architecture=str(metadata.get("architecture") or ""),
+                        framework=str(metadata.get("framework") or ""),
+                        modality=str(metadata.get("modality") or ""),
+                        pretrained_weight_available=bool(metadata.get("pretrained_weight_available", False)),
+                        weight_status=str(metadata.get("weight_status") or ""),
+                        weight_action=str(metadata.get("weight_action") or ""),
+                        wrapper_status=str(metadata.get("wrapper_status") or "unknown"),
+                        selection_enabled=bool(metadata.get("selection_enabled", True)),
                     ).as_dict()
                     for metadata, distance in zip(metadatas, distances)
                 ]
@@ -226,9 +223,91 @@ class DatabaseManager:
                 dsc=float(spec.get("dsc", 0.0)),
                 iou=float(spec.get("iou", 0.0)),
                 eval_count=int(spec.get("eval_count", 0)),
-                score=_lexical_score(query, _model_document(spec)),
+                score=_routing_score(
+                    float(spec.get("dsc", 0.0)),
+                    float(spec.get("iou", 0.0)),
+                    bool(spec.get("selection_enabled", True)),
+                ),
+                retrieval_score=_lexical_score(query, _model_document(spec)),
+                original_name=str(spec.get("original_name") or spec["model_name"]),
+                source_url=str(spec.get("source_url") or ""),
+                architecture=str(spec.get("architecture") or ""),
+                framework=str(spec.get("framework") or ""),
+                modality=str(spec.get("modality") or ""),
+                pretrained_weight_available=bool(spec.get("pretrained_weight_available", False)),
+                weight_status=str(spec.get("weight_status") or ""),
+                weight_action=str(spec.get("weight_action") or ""),
+                wrapper_status=str(spec.get("wrapper_status") or "unknown"),
+                selection_enabled=bool(spec.get("selection_enabled", True)),
             ).as_dict()
             for spec in ranked[:top_k]
+        ]
+
+    def retrieve_models_for_organ(
+        self,
+        target_organ: str,
+        query: str = "",
+        top_k: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return organ-matched candidates ranked by stored model score.
+
+        This is the main source for the LLM organ agent: it gives the agent the
+        prior model scorecard, not the current sample's ground truth metrics.
+        """
+
+        normalized_target = _normalize_organ(target_organ)
+        candidates = [
+            spec
+            for spec in self._fallback_specs
+            if _spec_supports_target(spec, normalized_target)
+        ]
+        if not candidates:
+            return self.retrieve_top_models(query or target_organ, top_k or self.config.top_k)
+
+        ranked = sorted(
+            candidates,
+            key=lambda spec: (
+                int(bool(spec.get("selection_enabled", True))),
+                _routing_score(
+                    float(spec.get("dsc", 0.0)),
+                    float(spec.get("iou", 0.0)),
+                    bool(spec.get("selection_enabled", True)),
+                ),
+                float(spec.get("dsc", 0.0)),
+                float(spec.get("iou", 0.0)),
+                _lexical_score(query, _model_document(spec)) if query else 0.0,
+            ),
+            reverse=True,
+        )
+        if top_k is not None:
+            ranked = ranked[:top_k]
+
+        return [
+            RetrievedModel(
+                model_name=str(spec["model_name"]),
+                description=str(spec["description"]),
+                target_organs=str(spec["target_organs"]),
+                dsc=float(spec.get("dsc", 0.0)),
+                iou=float(spec.get("iou", 0.0)),
+                eval_count=int(spec.get("eval_count", 0)),
+                score=_routing_score(
+                    float(spec.get("dsc", 0.0)),
+                    float(spec.get("iou", 0.0)),
+                    bool(spec.get("selection_enabled", True)),
+                ),
+                retrieval_score=_lexical_score(query, _model_document(spec)) if query else 0.0,
+                original_name=str(spec.get("original_name") or spec["model_name"]),
+                source_url=str(spec.get("source_url") or ""),
+                architecture=str(spec.get("architecture") or ""),
+                framework=str(spec.get("framework") or ""),
+                modality=str(spec.get("modality") or ""),
+                pretrained_weight_available=bool(spec.get("pretrained_weight_available", False)),
+                weight_status=str(spec.get("weight_status") or ""),
+                weight_action=str(spec.get("weight_action") or ""),
+                wrapper_status=str(spec.get("wrapper_status") or "unknown"),
+                selection_enabled=bool(spec.get("selection_enabled", True)),
+            ).as_dict()
+            for spec in ranked
         ]
 
     def update_metrics(self, model_name: str, new_dsc: float, new_iou: float | None = None) -> None:
@@ -382,8 +461,11 @@ class DatabaseManager:
 
 def _model_document(spec: dict[str, Any]) -> str:
     return (
-        f"{spec['model_name']} {spec['description']} "
-        f"organs:{spec['target_organs']} dsc:{spec.get('dsc', 0.0)} iou:{spec.get('iou', 0.0)}"
+        f"{spec['model_name']} {spec.get('original_name', '')} {spec['description']} "
+        f"architecture:{spec.get('architecture', '')} framework:{spec.get('framework', '')} "
+        f"weight_status:{spec.get('weight_status', '')} weight_action:{spec.get('weight_action', '')} "
+        f"source:{spec.get('source_url', '')} organs:{spec['target_organs']} "
+        f"dsc:{spec.get('dsc', 0.0)} iou:{spec.get('iou', 0.0)}"
     )
 
 
@@ -396,7 +478,11 @@ def _load_specs_from_registry(registry_path: Path) -> list[dict[str, Any]]:
     if not isinstance(registry, list):
         raise ValueError(f"Model registry must be a JSON list: {registry_path}")
 
-    specs = [_registry_item_to_spec(item) for item in registry if isinstance(item, dict)]
+    specs = [
+        _registry_item_to_spec(item)
+        for item in registry
+        if isinstance(item, dict) and bool(item.get("pretrained_weight_available", True))
+    ]
     return specs or [dict(spec) for spec in MODEL_SPECS]
 
 
@@ -415,8 +501,19 @@ def _registry_item_to_spec(item: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "model_name": model_name,
+        "original_name": str(item.get("original_name") or model_name),
         "description": str(item.get("description") or _default_description(model_name, target_organ, modality)),
+        "target_organ": target_organ,
         "target_organs": target_organs,
+        "modality": modality,
+        "source_url": str(item.get("source_url") or ""),
+        "architecture": str(item.get("architecture") or ""),
+        "framework": str(item.get("framework") or ""),
+        "pretrained_weight_available": bool(item.get("pretrained_weight_available", False)),
+        "weight_status": str(item.get("weight_status") or ""),
+        "weight_action": str(item.get("weight_action") or ""),
+        "wrapper_status": str(item.get("wrapper_status") or "unknown"),
+        "selection_enabled": bool(item.get("selection_enabled", True)),
         "dsc": float(metrics.get("dsc", 0.0) or 0.0),
         "iou": float(metrics.get("iou", 0.0) or 0.0),
         "eval_count": int(item.get("eval_count", 0) or 0),
@@ -457,3 +554,30 @@ def _lexical_score(query: str, document: str) -> float:
     if not query_terms:
         return 0.0
     return len(query_terms & document_terms) / len(query_terms)
+
+
+def _routing_score(dsc: float, iou: float, selection_enabled: bool = True) -> float:
+    """Single routing score exposed to the LLM orchestrator."""
+
+    if not selection_enabled:
+        return 0.0
+    return (0.7 * dsc) + (0.3 * iou)
+
+
+def _normalize_organ(target_organ: str) -> str:
+    return target_organ.lower().replace("-", "_").replace(" ", "_")
+
+
+def _spec_supports_target(spec: dict[str, Any], target_organ: str) -> bool:
+    spec_target = _normalize_organ(str(spec.get("target_organ", "")))
+    if target_organ == "lung" and spec_target in {"left_lung", "right_lung"}:
+        return False
+    if spec_target == target_organ:
+        return True
+
+    aliases = {
+        _normalize_organ(alias)
+        for alias in str(spec.get("target_organs", "")).split(",")
+        if alias.strip()
+    }
+    return target_organ in aliases

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import tempfile
 from functools import lru_cache
 import os
 from pathlib import Path
@@ -22,6 +24,41 @@ try:
 except ImportError:  # pragma: no cover
     AttentionUnet = None
     SegResNet = None
+
+GITHUB_LUNG_MODELS_REQUIRING_ADAPTER = {
+    "JoHof_lungmask": (
+        "JoHof/lungmask is a CT-volume model. Add a SimpleITK/numpy volume adapter "
+        "and install lungmask before enabling selection."
+    ),
+    "imlab-uiip_lung-segmentation-2d": (
+        "imlab-uiip/lung-segmentation-2d requires its trained_model.hdf5 and a "
+        "legacy Keras 2.0.4 / TensorFlow 1.1 compatible adapter."
+    ),
+    "IlliaOvcharenko_lung-segmentation": (
+        "IlliaOvcharenko/lung-segmentation requires cloning the repo, locating the "
+        "models folder weights, and mapping the PyTorch U-Net/VGG11 state dict."
+    ),
+    "imlab-uiip_lung-segmentation-3d": (
+        "imlab-uiip/lung-segmentation-3d requires its 3D hdf5 weights and a "
+        "volume adapter for tomography inputs."
+    ),
+    "knottwill_UNet-Small": (
+        "knottwill/UNet-Small requires the Models/UNet_wdk24.pt state dict and "
+        "its preprocessing pipeline."
+    ),
+    "rezazad68_BCDU-Net": (
+        "rezazad68/BCDU-Net requires downloading the lung learned weights from "
+        "the linked Google Drive and adding a Keras/TensorFlow adapter."
+    ),
+}
+
+GITHUB_HEART_MODELS_REQUIRING_ADAPTER = {
+    "ngaggion_HybridGNet": (
+        "ngaggion/HybridGNet requires cloning the repo, downloading the CXR "
+        "weights, installing PyTorch Geometric, and mapping the graph-contour "
+        "heart output back to a binary mask."
+    ),
+}
 
 
 def execute_model(
@@ -47,11 +84,23 @@ def execute_model(
     if model_name.startswith("cxr_basic_anatomy"):
         return _run_cxr_basic_anatomy(image_array, effective_target)
 
+    if model_name == "DIAGNijmegen_opencxr_heart_seg":
+        return _run_opencxr_heart_seg(image_array)
+
+    if model_name == "ConstantinSeibold_ChestXRayAnatomySegmentation":
+        return _run_cxas_anatomy_segmentation(image_path, effective_target)
+
     if model_name.startswith("sam_med2d"):
         return _run_sam_med2d(image_array, effective_target)
 
     if model_name in {"segresnet_lung", "attention_unet_lung"}:
         return _run_pytorch_model(image_array, model_name)
+
+    if model_name in GITHUB_LUNG_MODELS_REQUIRING_ADAPTER:
+        raise NotImplementedError(GITHUB_LUNG_MODELS_REQUIRING_ADAPTER[model_name])
+
+    if model_name in GITHUB_HEART_MODELS_REQUIRING_ADAPTER:
+        raise NotImplementedError(GITHUB_HEART_MODELS_REQUIRING_ADAPTER[model_name])
 
     raise ValueError(f"Unsupported model wrapper: {model_name} for target organ {target_organ}")
 
@@ -205,9 +254,15 @@ def _load_cxr_basic_anatomy():
         ) from exc
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    local_files_only = os.getenv("CXR_BASIC_LOCAL_FILES_ONLY", "1").lower() not in {
+        "0",
+        "false",
+        "no",
+    }
     model = AutoModel.from_pretrained(
         "ianpan/chest-x-ray-basic",
         trust_remote_code=True,
+        local_files_only=local_files_only,
     )
     model.eval().to(device)
     return model, device
@@ -245,6 +300,104 @@ def _select_cxr_basic_label(label_mask: np.ndarray, target_organ: str) -> np.nda
         "cxr_basic_anatomy supports target_organ values: "
         "lung, left_lung, right_lung, heart."
     )
+
+
+@lru_cache(maxsize=1)
+def _load_opencxr_heart_seg():
+    try:
+        import opencxr
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "DIAGNijmegen_opencxr_heart_seg requires OpenCXR. "
+            "Install it with: pip install opencxr. On first use, OpenCXR may "
+            "download heart_seg.h5 from the DIAGNijmegen/opencxr repository."
+        ) from exc
+
+    return opencxr.load(opencxr.algorithms.heart_seg)
+
+
+def _run_opencxr_heart_seg(image_array: np.ndarray) -> np.ndarray:
+    """Runs DIAGNijmegen/opencxr heart_seg and returns a binary heart mask."""
+
+    algorithm = _load_opencxr_heart_seg()
+    original_h, original_w = image_array.shape[:2]
+    image_u8 = _to_uint8_grayscale(image_array)
+    seg_map = algorithm.run(image_u8)
+    mask = np.asarray(seg_map) > 0
+    return _resize_binary_to_original(mask.astype(np.uint8), original_h, original_w)
+
+
+def _run_cxas_anatomy_segmentation(
+    image_path: Path | str,
+    target_organ: str,
+) -> np.ndarray:
+    """Runs ConstantinSeibold/ChestXRayAnatomySegmentation through an isolated env."""
+
+    image_path = Path(image_path).resolve()
+    project_root = Path(__file__).resolve().parents[1]
+    runner = project_root / "tools" / "run_cxas_mask.py"
+    if not runner.exists():
+        raise FileNotFoundError(f"CXAS runner script is missing: {runner}")
+
+    cxas_path = Path(os.getenv("CXAS_PATH", str(project_root / "model_assets" / "cxas"))).resolve()
+    cxas_env = os.getenv("CXAS_CONDA_ENV", "cxas_env")
+    cxas_python = os.getenv("CXAS_PYTHON")
+
+    with tempfile.TemporaryDirectory(prefix="cxas_mask_") as temp_dir:
+        output_path = Path(temp_dir) / "mask.png"
+        if cxas_python:
+            command = [
+                cxas_python,
+                str(runner),
+                "--image",
+                str(image_path),
+                "--output",
+                str(output_path),
+                "--target",
+                target_organ,
+            ]
+        else:
+            command = [
+                "conda",
+                "run",
+                "-n",
+                cxas_env,
+                "python",
+                str(runner),
+                "--image",
+                str(image_path),
+                "--output",
+                str(output_path),
+                "--target",
+                target_organ,
+            ]
+
+        env = os.environ.copy()
+        env["CXAS_PATH"] = str(cxas_path)
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if completed.returncode != 0:
+            raise RuntimeError(
+                "CXAS subprocess failed.\n"
+                f"Command: {' '.join(command)}\n"
+                f"stdout: {completed.stdout.strip()}\n"
+                f"stderr: {completed.stderr.strip()}"
+            )
+
+        if cv2 is not None:
+            mask = cv2.imread(str(output_path), cv2.IMREAD_GRAYSCALE)
+            if mask is None:
+                raise RuntimeError(f"CXAS subprocess did not create a readable mask: {output_path}")
+            return (mask > 0).astype(np.uint8)
+
+        from PIL import Image
+
+        return (np.asarray(Image.open(output_path).convert("L")) > 0).astype(np.uint8)
 
 
 @lru_cache(maxsize=1)

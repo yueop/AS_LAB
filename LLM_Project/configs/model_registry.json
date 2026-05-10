@@ -1,9 +1,20 @@
 [
   {
     "name": "cxr_basic_anatomy_lung",
+    "original_name": "ianpan/chest-x-ray-basic",
     "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "cxr", "chest_xray"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "Hugging Face ianpan/chest-x-ray-basic CXR anatomy model. It segments right lung, left lung, and heart; the lung wrapper returns the union of both lung labels.",
+    "source_url": "https://huggingface.co/ianpan/chest-x-ray-basic",
+    "architecture": "tf_efficientnetv2_s encoder with U-Net decoder and multitask classification heads",
+    "framework": "PyTorch / Transformers custom code",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_huggingface_not_github_repo",
+    "weight_action": "AutoModel.from_pretrained downloads ianpan/chest-x-ray-basic from Hugging Face; no GitHub weight file is required.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.9525,
@@ -18,9 +29,20 @@
   },
   {
     "name": "cxr_basic_anatomy_right_lung",
+    "original_name": "ianpan/chest-x-ray-basic",
     "target_organ": "right_lung",
+    "target_organs": ["right_lung", "right lung", "lung", "cxr", "chest_xray"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "Hugging Face ianpan/chest-x-ray-basic CXR anatomy model using the right-lung label.",
+    "source_url": "https://huggingface.co/ianpan/chest-x-ray-basic",
+    "architecture": "tf_efficientnetv2_s encoder with U-Net decoder and multitask classification heads",
+    "framework": "PyTorch / Transformers custom code",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_huggingface_not_github_repo",
+    "weight_action": "AutoModel.from_pretrained downloads ianpan/chest-x-ray-basic from Hugging Face; no GitHub weight file is required.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.957,
@@ -35,9 +57,20 @@
   },
   {
     "name": "cxr_basic_anatomy_left_lung",
+    "original_name": "ianpan/chest-x-ray-basic",
     "target_organ": "left_lung",
+    "target_organs": ["left_lung", "left lung", "lung", "cxr", "chest_xray"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "Hugging Face ianpan/chest-x-ray-basic CXR anatomy model using the left-lung label.",
+    "source_url": "https://huggingface.co/ianpan/chest-x-ray-basic",
+    "architecture": "tf_efficientnetv2_s encoder with U-Net decoder and multitask classification heads",
+    "framework": "PyTorch / Transformers custom code",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_huggingface_not_github_repo",
+    "weight_action": "AutoModel.from_pretrained downloads ianpan/chest-x-ray-basic from Hugging Face; no GitHub weight file is required.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.948,
@@ -52,9 +85,20 @@
   },
   {
     "name": "cxr_basic_anatomy_heart",
+    "original_name": "ianpan/chest-x-ray-basic",
     "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "cardiac_silhouette", "cxr", "chest_xray"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "Hugging Face ianpan/chest-x-ray-basic CXR anatomy model using the heart label.",
+    "source_url": "https://huggingface.co/ianpan/chest-x-ray-basic",
+    "architecture": "tf_efficientnetv2_s encoder with U-Net decoder and multitask classification heads",
+    "framework": "PyTorch / Transformers custom code",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_huggingface_not_github_repo",
+    "weight_action": "AutoModel.from_pretrained downloads ianpan/chest-x-ray-basic from Hugging Face; no GitHub weight file is required.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.943,
@@ -68,10 +112,105 @@
     "output_suffix": "cxr_basic_anatomy_heart_mask"
   },
   {
-    "name": "torchxrayvision_pspnet_lung",
-    "target_organ": "lung",
+    "name": "DIAGNijmegen_opencxr_heart_seg",
+    "original_name": "DIAGNijmegen/opencxr heart_seg",
+    "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "cardiac_silhouette", "cxr", "chest_xray", "pa_cxr"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "GitHub DIAGNijmegen/opencxr Heart Segmentation algorithm. Given a PA chest X-ray, it returns a binary heart mask; AP images may work but were not trained or tested by the authors.",
+    "source_url": "https://github.com/DIAGNijmegen/opencxr",
+    "architecture": "Keras U-Net heart segmentation model, 512x512 input, depth 6, batch normalization, SELU activation, transposed-convolution decoder, binary sigmoid output",
+    "framework": "OpenCXR / Keras / TensorFlow",
+    "pretrained_weight_available": true,
+    "weight_status": "available_github_raw_auto_download_not_packaged_in_wheel",
+    "weight_action": "Install opencxr; on first use OpenCXR downloads heart_seg.h5 from the DIAGNijmegen/opencxr GitHub raw URL if the local file is missing.",
+    "wrapper_status": "implemented_requires_opencxr_package_and_weight_download",
+    "selection_enabled": false,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "DIAGNijmegen_opencxr_heart_seg_mask"
+  },
+  {
+    "name": "ngaggion_HybridGNet",
+    "original_name": "ngaggion/HybridGNet",
+    "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "cardiac_silhouette", "lung", "lungs", "cxr", "chest_xray"],
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "description": "GitHub ngaggion/HybridGNet model for anatomically plausible CXR segmentation of lung and heart contours. CheXmask-Database uses HybridGNet to derive large-scale masks including ChestX-ray8/NIH images.",
+    "source_url": "https://github.com/ngaggion/HybridGNet",
+    "architecture": "Hybrid CNN and graph neural network segmentation pipeline for anatomically plausible lung and heart CXR contours",
+    "framework": "PyTorch / PyTorch Geometric",
+    "pretrained_weight_available": true,
+    "weight_status": "external_google_drive_not_in_github_repo",
+    "weight_action": "Download the official reproducibility weights from the Google Drive link in the HybridGNet README, then set a local checkpoint path for the adapter.",
+    "wrapper_status": "requires_pytorch_geometric_weight_adapter",
+    "selection_enabled": false,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "ngaggion_HybridGNet_heart_mask"
+  },
+  {
+    "name": "ConstantinSeibold_ChestXRayAnatomySegmentation",
+    "original_name": "ConstantinSeibold/ChestXRayAnatomySegmentation UNet_ResNet50_default",
+    "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "cardiac_silhouette", "ctr", "cardio_thoracic_ratio", "cxr", "chest_xray"],
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "description": "GitHub ConstantinSeibold/ChestXRayAnatomySegmentation package for fine-grained CXR anatomy segmentation and Cardio-Thoracic Ratio extraction. Default inference model is UNet_ResNet50_default trained on PAX-Ray++.",
+    "source_url": "https://github.com/ConstantinSeibold/ChestXRayAnatomySegmentation",
+    "architecture": "UNet_ResNet50_default multi-label CXR anatomy segmentation model",
+    "framework": "PyPI cxas package / PyTorch ecosystem",
+    "pretrained_weight_available": true,
+    "weight_status": "external_google_drive_downloaded_by_gdown_not_in_github_repo",
+    "weight_action": "Install cxas; its model loader downloads UNet_ResNet50_default.pth from Google Drive via gdown into the CXAS cache.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "ConstantinSeibold_ChestXRayAnatomySegmentation_heart_mask"
+  },
+  {
+    "name": "torchxrayvision_pspnet_lung",
+    "original_name": "mlmed/torchxrayvision ChestX-Det PSPNet",
+    "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "cxr", "chest_xray"],
+    "modality": "cxr",
+    "task_type": "segmentation",
+    "description": "TorchXRayVision ChestX-Det PSPNet anatomical segmentation model using the left-lung and right-lung channels.",
+    "source_url": "https://github.com/mlmed/torchxrayvision",
+    "architecture": "PSPNet anatomical segmentation model trained for 14 CXR structures including Left Lung, Right Lung, and Heart",
+    "framework": "PyTorch / TorchXRayVision",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_torchxrayvision_model_cache",
+    "weight_action": "torchxrayvision downloads or loads the ChestX-Det PSPNet checkpoint into its local model cache.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.8495011943385737,
@@ -86,9 +225,20 @@
   },
   {
     "name": "torchxrayvision_pspnet_heart",
+    "original_name": "mlmed/torchxrayvision ChestX-Det PSPNet",
     "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "cardiac_silhouette", "cxr", "chest_xray"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "TorchXRayVision ChestX-Det PSPNet anatomical segmentation model using the heart channel.",
+    "source_url": "https://github.com/mlmed/torchxrayvision",
+    "architecture": "PSPNet anatomical segmentation model trained for 14 CXR structures including Heart",
+    "framework": "PyTorch / TorchXRayVision",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_torchxrayvision_model_cache",
+    "weight_action": "torchxrayvision downloads or loads the ChestX-Det PSPNet checkpoint into its local model cache.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.8194,
@@ -136,54 +286,143 @@
     "output_suffix": "torchxrayvision_pspnet_left_lung_mask"
   },
   {
-    "name": "sam_med2d_box_prompt",
+    "name": "JoHof_lungmask",
+    "original_name": "JoHof/lungmask",
     "target_organ": "lung",
-    "modality": "cxr",
+    "target_organs": ["lung", "lungs", "left_lung", "right_lung", "ct", "chest_ct"],
+    "modality": "ct",
     "task_type": "segmentation",
+    "description": "GitHub JoHof/lungmask package for automated lung segmentation in CT under severe pathologies. Provides trained U-Net models including R231, LTRCLobes, LTRCLobes_R231, and R231CovidWeb.",
+    "source_url": "https://github.com/JoHof/lungmask",
+    "architecture": "2D U-Net slice-wise CT lung segmentation with optional lobe fusion",
+    "framework": "PyTorch / SimpleITK package",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_lungmask_package_download_not_project_repo",
+    "weight_action": "Install lungmask and let the package resolve its trained CT model weights; add CT volume adapter before enabling selection.",
+    "wrapper_status": "requires_ct_volume_adapter",
+    "selection_enabled": false,
     "metric_priority": "dsc",
     "validation_metrics": {
-      "dsc": 0.793,
-      "iou": 0.657
-    },
-    "runtime": {
-      "speed": "slow",
-      "device": "cuda"
-    },
-    "model_path": null,
-    "output_suffix": "sam_med2d_box_prompt_mask"
-  },
-  {
-    "name": "unet_lung_baseline",
-    "target_organ": "lung",
-    "modality": "cxr",
-    "task_type": "segmentation",
-    "metric_priority": "dsc",
-    "validation_metrics": {
-      "dsc": 0.5293563483894628,
-      "iou": 0.3648581209341344
+      "dsc": 0.0,
+      "iou": 0.0
     },
     "runtime": {
       "speed": "medium",
-      "device": "cuda"
+      "device": "cuda_or_cpu"
     },
     "model_path": null,
-    "output_suffix": "unet_lung_baseline_mask"
+    "output_suffix": "JoHof_lungmask_mask"
   },
   {
-    "name": "threshold_baseline",
+    "name": "imlab-uiip_lung-segmentation-2d",
+    "original_name": "imlab-uiip/lung-segmentation-2d",
     "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "cxr", "chest_xray", "lung_fields"],
     "modality": "cxr",
     "task_type": "segmentation",
+    "description": "GitHub imlab-uiip/lung-segmentation-2d U-Net inspired Keras model for lung field segmentation on chest X-ray images. Repository includes trained_model.hdf5 trained on JSRT and Montgomery data.",
+    "source_url": "https://github.com/imlab-uiip/lung-segmentation-2d",
+    "architecture": "2D U-Net-inspired convolutional encoder-decoder",
+    "framework": "Keras 2.0.4 / TensorFlow 1.1.0",
+    "pretrained_weight_available": true,
+    "weight_status": "repo_binary_hdf5_present",
+    "weight_action": "Fetch trained_model.hdf5 from the imlab-uiip/lung-segmentation-2d repository and test whether current Keras can load it; otherwise use a legacy environment.",
+    "wrapper_status": "requires_legacy_keras_adapter",
+    "selection_enabled": false,
     "metric_priority": "dsc",
     "validation_metrics": {
-      "dsc": 0.13153506799768888,
-      "iou": 0.07116057698378923
+      "dsc": 0.985,
+      "iou": 0.971
     },
     "runtime": {
-      "speed": "fast",
-      "device": "cpu"
+      "speed": "medium",
+      "device": "cuda_or_cpu"
     },
     "model_path": null,
-    "output_suffix": "threshold_baseline_mask"
+    "output_suffix": "imlab-uiip_lung-segmentation-2d_mask"
+  },
+  {
+    "name": "imlab-uiip_lung-segmentation-3d",
+    "original_name": "imlab-uiip/lung-segmentation-3d",
+    "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "ct", "tomography", "3d_lung"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub imlab-uiip/lung-segmentation-3d U-Net inspired Keras model for lung segmentation on chest 3D tomography images. Repository includes trained_model.hdf5 and trained_model_wc.hdf5 trained on private data.",
+    "source_url": "https://github.com/imlab-uiip/lung-segmentation-3d",
+    "architecture": "3D U-Net-inspired convolutional encoder-decoder, with optional coordinate channels",
+    "framework": "Keras 2.0.4 / TensorFlow 1.1.0",
+    "pretrained_weight_available": true,
+    "weight_status": "repo_binary_hdf5_present",
+    "weight_action": "Fetch trained_model.hdf5 or trained_model_wc.hdf5 from the repository and load it in a compatible legacy Keras/TensorFlow environment.",
+    "wrapper_status": "requires_legacy_keras_3d_adapter",
+    "selection_enabled": false,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "slow",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "imlab-uiip_lung-segmentation-3d_mask"
+  },
+  {
+    "name": "knottwill_UNet-Small",
+    "original_name": "knottwill/UNet-Small",
+    "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "ct", "lctsc"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub knottwill/UNet-Small project training a small PyTorch U-Net for lung segmentation on 12 cases from the Lung CT Segmentation Challenge. Repository stores Models/UNet_wdk24.pt.",
+    "source_url": "https://github.com/knottwill/UNet-Small",
+    "architecture": "Small U-Net",
+    "framework": "PyTorch 2.2",
+    "pretrained_weight_available": true,
+    "weight_status": "repo_binary_pt_present",
+    "weight_action": "Fetch Models/UNet_wdk24.pt from the repository and map it to the original Small U-Net class before enabling selection.",
+    "wrapper_status": "requires_repo_state_dict_adapter",
+    "selection_enabled": false,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "knottwill_UNet-Small_mask"
+  },
+  {
+    "name": "rezazad68_BCDU-Net",
+    "original_name": "rezazad68/BCDU-Net",
+    "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "ct", "kaggle_lung"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub rezazad68/BCDU-Net implementation of Bi-Directional ConvLSTM U-Net with densely connected convolutions. README provides a learned weight link for lung segmentation on the Lung Kaggle CT dataset.",
+    "source_url": "https://github.com/rezazad68/BCDU-Net",
+    "architecture": "BCDU-Net: bidirectional ConvLSTM U-Net with densely connected convolutions",
+    "framework": "Keras / TensorFlow",
+    "pretrained_weight_available": true,
+    "weight_status": "external_google_drive_not_in_github_repo",
+    "weight_action": "Download the lung learned weights from the Google Drive link in the BCDU-Net README and load them with a compatible Keras/TensorFlow adapter.",
+    "wrapper_status": "requires_google_drive_weight_adapter",
+    "selection_enabled": false,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.9904,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "medium",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "rezazad68_BCDU-Net_mask"
   }
 ]
