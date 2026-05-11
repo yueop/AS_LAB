@@ -7,6 +7,7 @@ outputs/
 chroma_db/
 model_comparison/chroma_db/
 model_comparison/metrics_history.jsonl
+model_cache/
 model_assets/
 __pycache__/
 *.pyc

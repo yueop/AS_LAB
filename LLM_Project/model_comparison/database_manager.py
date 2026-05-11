@@ -20,22 +20,6 @@ MODEL_SPECS = [
         "eval_count": 0,
     },
     {
-        "model_name": "cxr_basic_anatomy_left_lung",
-        "description": "Pretrained CXR anatomy segmentation model for the left lung.",
-        "target_organs": "left_lung,left lung,lung,chest,cxr",
-        "dsc": 0.948,
-        "iou": 0.9011,
-        "eval_count": 0,
-    },
-    {
-        "model_name": "cxr_basic_anatomy_right_lung",
-        "description": "Pretrained CXR anatomy segmentation model for the right lung.",
-        "target_organs": "right_lung,right lung,lung,chest,cxr",
-        "dsc": 0.957,
-        "iou": 0.9175,
-        "eval_count": 0,
-    },
-    {
         "model_name": "cxr_basic_anatomy_heart",
         "description": "Pretrained CXR anatomy segmentation model for the heart.",
         "target_organs": "heart,cardiac,chest,cxr",
@@ -52,25 +36,120 @@ MODEL_SPECS = [
         "eval_count": 0,
     },
     {
-        "model_name": "torchxrayvision_pspnet_left_lung",
-        "description": "Pretrained TorchXRayVision ChestX-Det PSPNet anatomical segmentation model using the left lung channel.",
-        "target_organs": "left_lung,left lung,lung,chest",
-        "dsc": 0.0,
-        "iou": 0.0,
-        "eval_count": 0,
-    },
-    {
-        "model_name": "torchxrayvision_pspnet_right_lung",
-        "description": "Pretrained TorchXRayVision ChestX-Det PSPNet anatomical segmentation model using the right lung channel.",
-        "target_organs": "right_lung,right lung,lung,chest",
-        "dsc": 0.0,
-        "iou": 0.0,
-        "eval_count": 0,
-    },
-    {
         "model_name": "torchxrayvision_pspnet_heart",
         "description": "Pretrained TorchXRayVision ChestX-Det PSPNet anatomical segmentation model using the heart channel.",
         "target_organs": "heart,cardiac,chest",
+        "dsc": 0.0,
+        "iou": 0.0,
+        "eval_count": 0,
+    },
+    {
+        "model_name": "JoHof_lungmask",
+        "description": "Pretrained JoHof/lungmask CT volume model for lung segmentation.",
+        "target_organs": "lung,lungs,left_lung,right_lung,ct,chest_ct",
+        "modality": "ct",
+        "source_url": "https://github.com/JoHof/lungmask",
+        "architecture": "2D U-Net slice-wise CT lung segmentation with optional lobe fusion",
+        "framework": "PyTorch / SimpleITK package",
+        "pretrained_weight_available": True,
+        "weight_status": "available_from_lungmask_package_download_not_project_repo",
+        "weight_action": "Install lungmask and let the package resolve its trained CT model weights.",
+        "wrapper_status": "implemented",
+        "selection_enabled": True,
+        "dsc": 0.0,
+        "iou": 0.0,
+        "eval_count": 0,
+    },
+    {
+        "model_name": "wasserth_TotalSegmentator_lung",
+        "description": "Pretrained TotalSegmentator CT model; returns the union of five lung lobe labels.",
+        "target_organs": "lung,lungs,left_lung,right_lung,ct,chest_ct,lung_lobes",
+        "modality": "ct",
+        "source_url": "https://github.com/wasserth/TotalSegmentator",
+        "architecture": "nnU-Net based CT whole-body multi-organ segmentation model with ROI subset inference",
+        "framework": "TotalSegmentator / nnU-Net v2 / PyTorch",
+        "pretrained_weight_available": True,
+        "weight_status": "available_from_totalsegmentator_package_download",
+        "weight_action": "Install TotalSegmentator and let the package download its pretrained nnU-Net weights on first use.",
+        "wrapper_status": "implemented",
+        "selection_enabled": True,
+        "dsc": 0.0,
+        "iou": 0.0,
+        "eval_count": 0,
+    },
+    {
+        "model_name": "knottwill_UNet-Small",
+        "description": (
+            "Pretrained knottwill/UNet-Small small PyTorch U-Net for lung CT segmentation; "
+            "adapter runs the official checkpoint slice-wise on CT volumes."
+        ),
+        "target_organs": "lung,lungs,ct,lctsc",
+        "modality": "ct",
+        "source_url": "https://github.com/knottwill/UNet-Small",
+        "architecture": "Small 2D U-Net",
+        "framework": "PyTorch",
+        "pretrained_weight_available": True,
+        "weight_status": "repo_binary_pt_present",
+        "weight_action": "Use Models/UNet_wdk24.pt from model_assets/external_repos/UNet-Small or download it into model_cache.",
+        "wrapper_status": "implemented",
+        "selection_enabled": True,
+        "dsc": 0.0,
+        "iou": 0.0,
+        "eval_count": 0,
+    },
+    {
+        "model_name": "wasserth_TotalSegmentator_heart",
+        "description": "Pretrained TotalSegmentator CT model using the heart label.",
+        "target_organs": "heart,cardiac,cardiac_silhouette,ct,chest_ct",
+        "modality": "ct",
+        "source_url": "https://github.com/wasserth/TotalSegmentator",
+        "architecture": "nnU-Net based CT whole-body multi-organ segmentation model with ROI subset inference",
+        "framework": "TotalSegmentator / nnU-Net v2 / PyTorch",
+        "pretrained_weight_available": True,
+        "weight_status": "available_from_totalsegmentator_package_download",
+        "weight_action": "Install TotalSegmentator and let the package download its pretrained nnU-Net weights on first use.",
+        "wrapper_status": "implemented",
+        "selection_enabled": True,
+        "dsc": 0.0,
+        "iou": 0.0,
+        "eval_count": 0,
+    },
+    {
+        "model_name": "fkong7_HeartFFDNet_mmwhs",
+        "description": (
+            "Pretrained fkong7/HeartFFDNet whole-heart CT mesh model; "
+            "adapter voxelizes the generated final mesh to a binary whole-heart mask."
+        ),
+        "target_organs": "heart,cardiac,whole_heart,ct,chest_ct,mmwhs",
+        "modality": "ct",
+        "source_url": "https://github.com/fkong7/HeartFFDNet",
+        "architecture": "CNN encoder with graph convolution / free-form deformation decoder",
+        "framework": "TensorFlow 1.x / Keras / VTK",
+        "pretrained_weight_available": True,
+        "weight_status": "official_google_drive_examples_downloaded_to_model_assets",
+        "weight_action": "Use the official Google Drive examples with-veins assets under model_assets/external_repos/HeartFFDNet.",
+        "wrapper_status": "implemented",
+        "selection_enabled": True,
+        "dsc": 0.0,
+        "iou": 0.0,
+        "eval_count": 0,
+    },
+    {
+        "model_name": "fkong7_HeartDeformNets_mmwhs",
+        "description": (
+            "Pretrained fkong7/HeartDeformNets MM-WHS whole-heart CT mesh model, "
+            "adapter uses locally generated biharmonic-coordinate mesh assets."
+        ),
+        "target_organs": "heart,cardiac,whole_heart,ct,chest_ct,mmwhs",
+        "modality": "ct",
+        "source_url": "https://github.com/fkong7/HeartDeformNets",
+        "architecture": "CNN encoder with graph convolution / biharmonic-coordinate mesh deformation decoder",
+        "framework": "TensorFlow 1.x / Keras / VTK / C++ biharmonic-coordinate tools",
+        "pretrained_weight_available": True,
+        "weight_status": "repo_hdf5_present_and_runtime_template_dat_generated",
+        "weight_action": "Use the latest *_bbw.dat and *_template.vtp generated under HeartDeformNets/templates/train_dat/wh_noerode.",
+        "wrapper_status": "implemented",
+        "selection_enabled": True,
         "dsc": 0.0,
         "iou": 0.0,
         "eval_count": 0,
@@ -248,6 +327,7 @@ class DatabaseManager:
         target_organ: str,
         query: str = "",
         top_k: int | None = None,
+        modality: str | None = None,
     ) -> list[dict[str, Any]]:
         """Return organ-matched candidates ranked by stored model score.
 
@@ -260,6 +340,7 @@ class DatabaseManager:
             spec
             for spec in self._fallback_specs
             if _spec_supports_target(spec, normalized_target)
+            and _spec_supports_modality(spec, modality)
         ]
         if not candidates:
             return self.retrieve_top_models(query or target_organ, top_k or self.config.top_k)
@@ -581,3 +662,12 @@ def _spec_supports_target(spec: dict[str, Any], target_organ: str) -> bool:
         if alias.strip()
     }
     return target_organ in aliases
+
+
+def _spec_supports_modality(spec: dict[str, Any], modality: str | None) -> bool:
+    if not modality:
+        return True
+    spec_modality = str(spec.get("modality") or "").lower()
+    if not spec_modality:
+        return modality.lower() == "cxr"
+    return spec_modality == modality.lower()

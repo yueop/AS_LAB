@@ -14,3 +14,7 @@ timm
 safetensors
 albumentations
 langchain-ollama<0.3
+SimpleITK
+lungmask
+TotalSegmentator
+nibabel

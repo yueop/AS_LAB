@@ -178,6 +178,8 @@ def _best_candidate(candidates: list[dict[str, Any]]) -> dict[str, Any]:
     return max(
         candidates,
         key=lambda candidate: (
+            int(candidate.get("execution_status") == "success"),
+            int(bool(candidate.get("selection_enabled", True))),
             float(candidate.get("routing_score", candidate.get("score", 0.0)) or 0.0),
             float(candidate.get("dsc", 0.0) or 0.0),
             float(candidate.get("iou", 0.0) or 0.0),

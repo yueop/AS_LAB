@@ -51,7 +51,13 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
             target_organ=config.target_organ,
             query=sample_query,
             top_k=config.top_k,
+            modality=sample.metadata.get("modality"),
         )
+        if not candidates:
+            raise ValueError(
+                "No model candidates found for "
+                f"target_organ={config.target_organ}, modality={sample.metadata.get('modality')}"
+            )
         target_organ = config.target_organ
         models_to_run = [
             candidate
@@ -74,8 +80,18 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
                     image=sample.image,
                 )
                 predicted_masks[model_name] = pred_mask
-                candidate_output_path = config.output_dir / f"{sample.sample_id}_{model_name}_candidate_mask.png"
-                saved_candidate_mask = MedicalImageDataLoader.save_mask(pred_mask, candidate_output_path)
+                candidate_output_path = _mask_output_path(
+                    config.output_dir,
+                    sample.sample_id,
+                    f"{model_name}_candidate_mask",
+                    pred_mask,
+                    sample.metadata,
+                )
+                saved_candidate_mask = MedicalImageDataLoader.save_mask(
+                    pred_mask,
+                    candidate_output_path,
+                    reference_image_path=sample.image_path,
+                )
                 candidate_mask_paths[model_name] = str(saved_candidate_mask)
                 metrics = evaluate_prediction(pred_mask, sample.true_mask)
                 candidate_results.append(
@@ -150,21 +166,51 @@ def run_pipeline(config: PipelineConfig, query: str | None = None, limit: int | 
         selected_mask = predicted_masks.get(decision["selected_model"])
         saved_mask_path = None
         if selected_mask is not None:
-            output_path = config.output_dir / f"{sample.sample_id}_{decision['selected_model']}_mask.png"
-            saved_mask_path = MedicalImageDataLoader.save_mask(selected_mask, output_path)
+            output_path = _mask_output_path(
+                config.output_dir,
+                sample.sample_id,
+                f"{decision['selected_model']}_mask",
+                selected_mask,
+                sample.metadata,
+            )
+            saved_mask_path = MedicalImageDataLoader.save_mask(
+                selected_mask,
+                output_path,
+                reference_image_path=sample.image_path,
+            )
 
         consensus_mask_path = None
         if consensus_mask is not None:
-            consensus_output_path = config.output_dir / f"{sample.sample_id}_{target_organ}_consensus_mask.png"
-            consensus_mask_path = MedicalImageDataLoader.save_mask(consensus_mask, consensus_output_path)
+            consensus_output_path = _mask_output_path(
+                config.output_dir,
+                sample.sample_id,
+                f"{target_organ}_consensus_mask",
+                consensus_mask,
+                sample.metadata,
+            )
+            consensus_mask_path = MedicalImageDataLoader.save_mask(
+                consensus_mask,
+                consensus_output_path,
+                reference_image_path=sample.image_path,
+            )
 
         best_mask_path = None
         if best_dsc_result is not None:
             best_model_name = best_dsc_result["model_name"]
             best_mask = predicted_masks.get(best_model_name)
             if best_mask is not None:
-                best_output_path = config.output_dir / f"{sample.sample_id}_{best_model_name}_best_dsc_mask.png"
-                best_mask_path = MedicalImageDataLoader.save_mask(best_mask, best_output_path)
+                best_output_path = _mask_output_path(
+                    config.output_dir,
+                    sample.sample_id,
+                    f"{best_model_name}_best_dsc_mask",
+                    best_mask,
+                    sample.metadata,
+                )
+                best_mask_path = MedicalImageDataLoader.save_mask(
+                    best_mask,
+                    best_output_path,
+                    reference_image_path=sample.image_path,
+                )
 
         results.append(
             {
@@ -261,6 +307,19 @@ def _score_masks_against_consensus(
         }
 
     return consensus, scores
+
+
+def _mask_output_path(
+    output_dir: Path,
+    sample_id: str,
+    suffix: str,
+    mask: Any,
+    metadata: dict[str, str],
+) -> Path:
+    mask_array = np.asarray(mask)
+    is_volume = mask_array.ndim == 3 or metadata.get("input_kind") == "volume"
+    extension = ".nii.gz" if is_volume else ".png"
+    return output_dir / f"{sample_id}_{suffix}{extension}"
 
 
 def _attach_inference_scores(

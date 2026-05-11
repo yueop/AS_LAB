@@ -28,62 +28,6 @@
     "output_suffix": "cxr_basic_anatomy_lung_mask"
   },
   {
-    "name": "cxr_basic_anatomy_right_lung",
-    "original_name": "ianpan/chest-x-ray-basic",
-    "target_organ": "right_lung",
-    "target_organs": ["right_lung", "right lung", "lung", "cxr", "chest_xray"],
-    "modality": "cxr",
-    "task_type": "segmentation",
-    "description": "Hugging Face ianpan/chest-x-ray-basic CXR anatomy model using the right-lung label.",
-    "source_url": "https://huggingface.co/ianpan/chest-x-ray-basic",
-    "architecture": "tf_efficientnetv2_s encoder with U-Net decoder and multitask classification heads",
-    "framework": "PyTorch / Transformers custom code",
-    "pretrained_weight_available": true,
-    "weight_status": "available_from_huggingface_not_github_repo",
-    "weight_action": "AutoModel.from_pretrained downloads ianpan/chest-x-ray-basic from Hugging Face; no GitHub weight file is required.",
-    "wrapper_status": "implemented",
-    "selection_enabled": true,
-    "metric_priority": "dsc",
-    "validation_metrics": {
-      "dsc": 0.957,
-      "iou": 0.9175
-    },
-    "runtime": {
-      "speed": "medium",
-      "device": "cuda"
-    },
-    "model_path": null,
-    "output_suffix": "cxr_basic_anatomy_right_lung_mask"
-  },
-  {
-    "name": "cxr_basic_anatomy_left_lung",
-    "original_name": "ianpan/chest-x-ray-basic",
-    "target_organ": "left_lung",
-    "target_organs": ["left_lung", "left lung", "lung", "cxr", "chest_xray"],
-    "modality": "cxr",
-    "task_type": "segmentation",
-    "description": "Hugging Face ianpan/chest-x-ray-basic CXR anatomy model using the left-lung label.",
-    "source_url": "https://huggingface.co/ianpan/chest-x-ray-basic",
-    "architecture": "tf_efficientnetv2_s encoder with U-Net decoder and multitask classification heads",
-    "framework": "PyTorch / Transformers custom code",
-    "pretrained_weight_available": true,
-    "weight_status": "available_from_huggingface_not_github_repo",
-    "weight_action": "AutoModel.from_pretrained downloads ianpan/chest-x-ray-basic from Hugging Face; no GitHub weight file is required.",
-    "wrapper_status": "implemented",
-    "selection_enabled": true,
-    "metric_priority": "dsc",
-    "validation_metrics": {
-      "dsc": 0.948,
-      "iou": 0.9011
-    },
-    "runtime": {
-      "speed": "medium",
-      "device": "cuda"
-    },
-    "model_path": null,
-    "output_suffix": "cxr_basic_anatomy_left_lung_mask"
-  },
-  {
     "name": "cxr_basic_anatomy_heart",
     "original_name": "ianpan/chest-x-ray-basic",
     "target_organ": "heart",
@@ -125,8 +69,8 @@
     "pretrained_weight_available": true,
     "weight_status": "available_github_raw_auto_download_not_packaged_in_wheel",
     "weight_action": "Install opencxr; on first use OpenCXR downloads heart_seg.h5 from the DIAGNijmegen/opencxr GitHub raw URL if the local file is missing.",
-    "wrapper_status": "implemented_requires_opencxr_package_and_weight_download",
-    "selection_enabled": false,
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.0,
@@ -252,40 +196,6 @@
     "output_suffix": "torchxrayvision_pspnet_heart_mask"
   },
   {
-    "name": "torchxrayvision_pspnet_right_lung",
-    "target_organ": "right_lung",
-    "modality": "cxr",
-    "task_type": "segmentation",
-    "metric_priority": "dsc",
-    "validation_metrics": {
-      "dsc": 0.64,
-      "iou": 0.47
-    },
-    "runtime": {
-      "speed": "medium",
-      "device": "cuda"
-    },
-    "model_path": null,
-    "output_suffix": "torchxrayvision_pspnet_right_lung_mask"
-  },
-  {
-    "name": "torchxrayvision_pspnet_left_lung",
-    "target_organ": "left_lung",
-    "modality": "cxr",
-    "task_type": "segmentation",
-    "metric_priority": "dsc",
-    "validation_metrics": {
-      "dsc": 0.54,
-      "iou": 0.37
-    },
-    "runtime": {
-      "speed": "medium",
-      "device": "cuda"
-    },
-    "model_path": null,
-    "output_suffix": "torchxrayvision_pspnet_left_lung_mask"
-  },
-  {
     "name": "JoHof_lungmask",
     "original_name": "JoHof/lungmask",
     "target_organ": "lung",
@@ -298,9 +208,9 @@
     "framework": "PyTorch / SimpleITK package",
     "pretrained_weight_available": true,
     "weight_status": "available_from_lungmask_package_download_not_project_repo",
-    "weight_action": "Install lungmask and let the package resolve its trained CT model weights; add CT volume adapter before enabling selection.",
-    "wrapper_status": "requires_ct_volume_adapter",
-    "selection_enabled": false,
+    "weight_action": "Install lungmask and let the package resolve its trained CT model weights; run on CT volume inputs such as .nii.gz/.mha/.nrrd.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.0,
@@ -312,6 +222,118 @@
     },
     "model_path": null,
     "output_suffix": "JoHof_lungmask_mask"
+  },
+  {
+    "name": "wasserth_TotalSegmentator_lung",
+    "original_name": "wasserth/TotalSegmentator",
+    "target_organ": "lung",
+    "target_organs": ["lung", "lungs", "left_lung", "right_lung", "ct", "chest_ct", "lung_lobes"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub wasserth/TotalSegmentator CT multi-organ segmentation model. The lung adapter returns the union of five lung lobe labels.",
+    "source_url": "https://github.com/wasserth/TotalSegmentator",
+    "architecture": "nnU-Net based CT whole-body multi-organ segmentation model with ROI subset inference",
+    "framework": "TotalSegmentator / nnU-Net v2 / PyTorch",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_totalsegmentator_package_download",
+    "weight_action": "Install TotalSegmentator and let the package download its pretrained nnU-Net weights on first use.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "slow",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "wasserth_TotalSegmentator_lung_mask"
+  },
+  {
+    "name": "wasserth_TotalSegmentator_heart",
+    "original_name": "wasserth/TotalSegmentator",
+    "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "cardiac_silhouette", "ct", "chest_ct"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub wasserth/TotalSegmentator CT multi-organ segmentation model using the heart label.",
+    "source_url": "https://github.com/wasserth/TotalSegmentator",
+    "architecture": "nnU-Net based CT whole-body multi-organ segmentation model with ROI subset inference",
+    "framework": "TotalSegmentator / nnU-Net v2 / PyTorch",
+    "pretrained_weight_available": true,
+    "weight_status": "available_from_totalsegmentator_package_download",
+    "weight_action": "Install TotalSegmentator and let the package download its pretrained nnU-Net weights on first use.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
+    "metric_priority": "dsc",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "slow",
+      "device": "cuda_or_cpu"
+    },
+    "model_path": null,
+    "output_suffix": "wasserth_TotalSegmentator_heart_mask"
+  },
+  {
+    "name": "fkong7_HeartFFDNet_mmwhs",
+    "original_name": "fkong7/HeartFFDNet",
+    "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "whole_heart", "ct", "chest_ct", "mmwhs"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub fkong7/HeartFFDNet whole-heart mesh generation model. The adapter runs the official with-veins pretrained example model in a legacy TensorFlow environment, then voxelizes the generated final mesh into a binary whole-heart CT mask.",
+    "source_url": "https://github.com/fkong7/HeartFFDNet",
+    "architecture": "CNN encoder with graph convolution / free-form deformation decoder for whole-heart mesh prediction",
+    "framework": "TensorFlow 1.x / Keras / VTK",
+    "pretrained_weight_available": true,
+    "weight_status": "official_google_drive_examples_downloaded_to_model_assets",
+    "weight_action": "Use the official Google Drive examples folder from the README. The adapter expects weights_gcn.hdf5, template_with_veins_original_normalized.vtp, and example_dat_of_template_with_veins.dat under model_assets/external_repos/HeartFFDNet/examples/examples.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
+    "metric_priority": "overlap_consensus",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "slow",
+      "device": "cpu_or_legacy_cuda"
+    },
+    "model_path": "model_assets/external_repos/HeartFFDNet",
+    "output_suffix": "fkong7_HeartFFDNet_mmwhs_mask"
+  },
+  {
+    "name": "fkong7_HeartDeformNets_mmwhs",
+    "original_name": "fkong7/HeartDeformNets",
+    "target_organ": "heart",
+    "target_organs": ["heart", "cardiac", "whole_heart", "ct", "chest_ct", "mmwhs"],
+    "modality": "ct",
+    "task_type": "segmentation",
+    "description": "GitHub fkong7/HeartDeformNets whole-heart mesh deformation model. The adapter runs the pretrained task1 MMWHS model with the locally generated biharmonic-coordinate mesh assets, then voxelizes the final mesh into a binary whole-heart CT mask.",
+    "source_url": "https://github.com/fkong7/HeartDeformNets",
+    "architecture": "CNN encoder with graph convolution / biharmonic-coordinate mesh deformation decoder",
+    "framework": "TensorFlow 1.x / Keras / VTK / C++ biharmonic-coordinate tools",
+    "pretrained_weight_available": true,
+    "weight_status": "repo_hdf5_present_and_runtime_template_dat_generated",
+    "weight_action": "Use pretrained/task1_mmwhs.hdf5 with the latest *_bbw.dat and *_template.vtp generated by templates/create_template.sh under HeartDeformNets/templates/train_dat/wh_noerode.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
+    "metric_priority": "overlap_consensus",
+    "validation_metrics": {
+      "dsc": 0.0,
+      "iou": 0.0
+    },
+    "runtime": {
+      "speed": "slow",
+      "device": "cpu_or_legacy_cuda"
+    },
+    "model_path": "HeartDeformNets",
+    "output_suffix": "fkong7_HeartDeformNets_mmwhs_mask"
   },
   {
     "name": "imlab-uiip_lung-segmentation-2d",
@@ -327,8 +349,8 @@
     "pretrained_weight_available": true,
     "weight_status": "repo_binary_hdf5_present",
     "weight_action": "Fetch trained_model.hdf5 from the imlab-uiip/lung-segmentation-2d repository and test whether current Keras can load it; otherwise use a legacy environment.",
-    "wrapper_status": "requires_legacy_keras_adapter",
-    "selection_enabled": false,
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.985,
@@ -376,15 +398,15 @@
     "target_organs": ["lung", "lungs", "ct", "lctsc"],
     "modality": "ct",
     "task_type": "segmentation",
-    "description": "GitHub knottwill/UNet-Small project training a small PyTorch U-Net for lung segmentation on 12 cases from the Lung CT Segmentation Challenge. Repository stores Models/UNet_wdk24.pt.",
+    "description": "GitHub knottwill/UNet-Small project training a small PyTorch U-Net for lung segmentation on 12 cases from the Lung CT Segmentation Challenge. The adapter runs the official Models/UNet_wdk24.pt checkpoint slice-wise on CT volumes and restores the 3D lung mask to the input volume shape.",
     "source_url": "https://github.com/knottwill/UNet-Small",
     "architecture": "Small U-Net",
     "framework": "PyTorch 2.2",
     "pretrained_weight_available": true,
     "weight_status": "repo_binary_pt_present",
-    "weight_action": "Fetch Models/UNet_wdk24.pt from the repository and map it to the original Small U-Net class before enabling selection.",
-    "wrapper_status": "requires_repo_state_dict_adapter",
-    "selection_enabled": false,
+    "weight_action": "Use Models/UNet_wdk24.pt from model_assets/external_repos/UNet-Small or download the same checkpoint from the GitHub repository into model_cache.",
+    "wrapper_status": "implemented",
+    "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
       "dsc": 0.0,
@@ -394,7 +416,7 @@
       "speed": "medium",
       "device": "cuda_or_cpu"
     },
-    "model_path": null,
+    "model_path": "model_assets/external_repos/UNet-Small",
     "output_suffix": "knottwill_UNet-Small_mask"
   },
   {

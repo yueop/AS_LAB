@@ -43,6 +43,12 @@ class PipelineConfig:
         ".bmp",
         ".tif",
         ".tiff",
+        ".dcm",
+        ".mha",
+        ".mhd",
+        ".nii",
+        ".nii.gz",
+        ".nrrd",
     )
     supported_mask_exts: tuple[str, ...] = (
         ".png",
@@ -52,6 +58,11 @@ class PipelineConfig:
         ".tif",
         ".tiff",
         ".npy",
+        ".mha",
+        ".mhd",
+        ".nii",
+        ".nii.gz",
+        ".nrrd",
     )
 
 
