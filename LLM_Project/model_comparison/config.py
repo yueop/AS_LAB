@@ -27,6 +27,7 @@ class PipelineConfig:
     split_name: str | None = os.getenv("SPLIT_NAME")
     output_dir: Path = _path_from_env("OUTPUT_DIR", ROOT_DIR / "outputs")
     chroma_dir: Path = _path_from_env("CHROMA_DIR", ROOT_DIR / "chroma_db")
+    agent_memory_dir: Path = _path_from_env("AGENT_MEMORY_DIR", ROOT_DIR / "agent_memory")
     model_registry_path: Path = _path_from_env(
         "MODEL_REGISTRY",
         ROOT_DIR.parent / "configs" / "model_registry.json",
@@ -69,3 +70,4 @@ class PipelineConfig:
 def ensure_runtime_dirs(config: PipelineConfig) -> None:
     config.output_dir.mkdir(parents=True, exist_ok=True)
     config.chroma_dir.mkdir(parents=True, exist_ok=True)
+    config.agent_memory_dir.mkdir(parents=True, exist_ok=True)

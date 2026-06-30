@@ -82,10 +82,19 @@ def execute_model(
     target_organ: str,
     image: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Runs the selected vision wrapper and returns a binary 2D mask."""
+    """등록된 vision wrapper 하나를 실행하고 binary mask를 반환한다.
+
+    CXR wrapper는 공통 후처리 후 2D 마스크를 반환한다. CT wrapper는 3D volume
+    마스크를 반환하며, 이미 로딩된 numpy 이미지보다 원본 image_path를 필요로 하는 경우가 많다.
+    """
 
     effective_target = _target_from_model_name(model_name, target_organ)
 
+    def finish_cxr_2d(mask: np.ndarray) -> np.ndarray:
+        return _postprocess_cxr_mask(mask, effective_target)
+
+    # CT/volume adapter는 NIfTI/DICOM 경로를 직접 사용하므로 먼저 분기한다.
+    # 그래야 2D CXR 이미지 로더로 잘못 넘어가지 않는다.
     if model_name == "JoHof_lungmask":
         return _run_johof_lungmask(image_path, effective_target, image)
 
@@ -103,32 +112,33 @@ def execute_model(
 
     image_array = image if image is not None else MedicalImageDataLoader.load_image(image_path)
 
+    # CXR adapter들은 공통 후처리 경로를 거쳐 scorecard 비교 전에 일관된 binary mask 형식으로 맞춘다.
     if model_name == "threshold_baseline":
-        return _threshold_baseline(image_array)
+        return finish_cxr_2d(_threshold_baseline(image_array))
 
     if model_name in {"unet_lung", "unet_lung_baseline"}:
-        return _lung_like_baseline(image_array)
+        return finish_cxr_2d(_lung_like_baseline(image_array))
 
     if model_name.startswith("torchxrayvision_pspnet_"):
-        return _run_torchxrayvision_pspnet(image_array, model_name, effective_target)
+        return finish_cxr_2d(_run_torchxrayvision_pspnet(image_array, model_name, effective_target))
 
     if model_name.startswith("cxr_basic_anatomy"):
-        return _run_cxr_basic_anatomy(image_array, effective_target)
+        return finish_cxr_2d(_run_cxr_basic_anatomy(image_array, effective_target))
 
     if model_name == "DIAGNijmegen_opencxr_heart_seg":
-        return _run_opencxr_heart_seg(image_array)
+        return finish_cxr_2d(_run_opencxr_heart_seg(image_array))
 
     if model_name == "ConstantinSeibold_ChestXRayAnatomySegmentation":
-        return _run_cxas_anatomy_segmentation(image_path, effective_target)
+        return finish_cxr_2d(_run_cxas_anatomy_segmentation(image_path, effective_target))
 
     if model_name == "imlab-uiip_lung-segmentation-2d":
-        return _run_imlab_lung_segmentation_2d(image_array)
+        return finish_cxr_2d(_run_imlab_lung_segmentation_2d(image_array))
 
     if model_name.startswith("sam_med2d"):
-        return _run_sam_med2d(image_array, effective_target)
+        return finish_cxr_2d(_run_sam_med2d(image_array, effective_target))
 
     if model_name in {"segresnet_lung", "attention_unet_lung"}:
-        return _run_pytorch_model(image_array, model_name)
+        return finish_cxr_2d(_run_pytorch_model(image_array, model_name))
 
     if model_name in GITHUB_LUNG_MODELS_REQUIRING_ADAPTER:
         raise NotImplementedError(GITHUB_LUNG_MODELS_REQUIRING_ADAPTER[model_name])
@@ -1003,13 +1013,6 @@ def _find_heartdeform_assets(repo: Path) -> tuple[Path | None, Path | None]:
     return (dat_files[0] if dat_files else None, template_files[0] if template_files else None)
 
 
-def _legacy_python_command(env_name: str, env_var: str) -> list[str]:
-    configured = os.getenv(env_var)
-    if configured:
-        return [configured]
-    return ["conda", "run", "-n", os.getenv("HEART_LEGACY_CONDA_ENV", env_name), "python"]
-
-
 def _heart_mesh_input_name(input_path: Path) -> str:
     if input_path.name == "ct.nii.gz" and input_path.parent.name:
         return f"{input_path.parent.name}.nii.gz"
@@ -1337,6 +1340,110 @@ def _resize_float_image(image: np.ndarray, height: int, width: int) -> np.ndarra
         align_corners=False,
     )
     return resized.squeeze().numpy().astype(np.float32)
+
+
+def _postprocess_cxr_mask(mask: np.ndarray, target_organ: str) -> np.ndarray:
+    if not _cxr_mask_postprocess_enabled():
+        return np.asarray(mask).astype(np.uint8)
+
+    mask_array = np.asarray(mask)
+    if mask_array.ndim != 2:
+        return mask_array.astype(np.uint8)
+
+    binary = (mask_array > 0).astype(np.uint8)
+    if binary.sum() == 0:
+        return binary
+
+    kernel_size = _int_env("CXR_MASK_POSTPROCESS_KERNEL", 3)
+    if cv2 is not None and kernel_size > 1:
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+
+    binary = _fill_binary_holes_2d(binary)
+    min_fraction = _float_env("CXR_MASK_POSTPROCESS_MIN_FRACTION", 0.001)
+    binary = _remove_small_binary_regions(binary, min_fraction=min_fraction).astype(np.uint8)
+    keep = _largest_component_count_for_target(target_organ)
+    binary = _keep_largest_components_2d(binary, keep=keep)
+    return binary.astype(np.uint8)
+
+
+def _cxr_mask_postprocess_enabled() -> bool:
+    return os.getenv("CXR_MASK_POSTPROCESS", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _largest_component_count_for_target(target_organ: str) -> int:
+    target = target_organ.strip().lower()
+    if target in {"lung", "lungs", "chest"}:
+        return 2
+    return 1
+
+
+def _fill_binary_holes_2d(mask: np.ndarray) -> np.ndarray:
+    binary = np.asarray(mask).astype(bool)
+    try:
+        from scipy import ndimage
+
+        return ndimage.binary_fill_holes(binary).astype(np.uint8)
+    except ImportError:
+        pass
+
+    if cv2 is None:
+        return binary.astype(np.uint8)
+
+    padded = np.pad(binary.astype(np.uint8), 1, mode="constant", constant_values=0)
+    flooded = padded.copy()
+    cv2.floodFill(flooded, None, (0, 0), 1)
+    holes = flooded == 0
+    filled = np.logical_or(padded.astype(bool), holes)
+    return filled[1:-1, 1:-1].astype(np.uint8)
+
+
+def _keep_largest_components_2d(mask: np.ndarray, keep: int) -> np.ndarray:
+    binary = np.asarray(mask).astype(bool)
+    if keep <= 0 or binary.sum() == 0:
+        return np.zeros_like(binary, dtype=np.uint8)
+
+    if cv2 is not None:
+        num_labels, labels, stats, _centroids = cv2.connectedComponentsWithStats(
+            binary.astype(np.uint8),
+            connectivity=8,
+        )
+        if num_labels <= 1:
+            return binary.astype(np.uint8)
+        component_ids = list(range(1, num_labels))
+        component_ids.sort(key=lambda idx: stats[idx, cv2.CC_STAT_AREA], reverse=True)
+        selected = set(component_ids[:keep])
+        return np.isin(labels, list(selected)).astype(np.uint8)
+
+    try:
+        from skimage import measure
+    except ImportError:
+        return binary.astype(np.uint8)
+
+    labels = measure.label(binary, connectivity=2)
+    regions = sorted(measure.regionprops(labels), key=lambda region: region.area, reverse=True)
+    selected = {region.label for region in regions[:keep]}
+    return np.isin(labels, list(selected)).astype(np.uint8)
+
+
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+def _float_env(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, str(default)))
+    except ValueError:
+        return default
 
 
 def _equalize_grayscale(image: np.ndarray) -> np.ndarray:

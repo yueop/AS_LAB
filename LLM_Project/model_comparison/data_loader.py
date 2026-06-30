@@ -22,6 +22,8 @@ except ImportError:  # pragma: no cover - optional fallback for lighter installs
 
 @dataclass(frozen=True)
 class SegmentationSample:
+    """사후 평가용 GT 마스크를 선택적으로 포함하는 단일 라우팅 샘플."""
+
     sample_id: str
     image_path: Path
     image: np.ndarray | None
@@ -32,7 +34,7 @@ class SegmentationSample:
 
 
 class MedicalImageDataLoader:
-    """Loads medical image segmentation inputs and optional ground-truth masks."""
+    """CXR/CT 입력과 선택적 GT 마스크를 로딩하되, GT를 라우팅 근거와 분리한다."""
 
     def __init__(
         self,
@@ -110,9 +112,14 @@ class MedicalImageDataLoader:
     def load_sample(self, image_path: Path | str) -> SegmentationSample:
         image_path = Path(image_path).expanduser().resolve()
         is_volume = self.is_volume_path(image_path)
+        # CXR 이미지는 2D 배열로 메모리에 로딩한다.
+        # CT volume은 여러 adapter가 원본 NIfTI/DICOM 경로를 필요로 하므로 여기서는 경로를 유지한다.
         image = None if is_volume else self.load_image(image_path, self.image_size)
         mask_paths = self.find_mask_paths_for_image(image_path)
         mask_path = mask_paths[0] if mask_paths else None
+        # true_mask는 평가 전용이다.
+        # 이후 파이프라인에서 라우팅이 끝난 뒤 DSC/IoU를 계산할 때만 사용하고,
+        # LLM scorecard 구성에는 사용하지 않는다.
         true_mask = self.load_combined_mask(mask_paths, self.image_size) if mask_paths else None
         chexmask_available = False
         chexmask_parts = 0
@@ -138,11 +145,9 @@ class MedicalImageDataLoader:
             },
         )
 
-    def find_mask_for_image(self, image_path: Path) -> Path | None:
-        mask_paths = self.find_mask_paths_for_image(image_path)
-        return mask_paths[0] if mask_paths else None
-
     def find_mask_paths_for_image(self, image_path: Path) -> list[Path]:
+        # TotalSegmentator는 volume별 segmentations 폴더에 장기별 파일을 따로 저장한다.
+        # 따라서 CT 마스크를 먼저 찾는다.
         total_segmentator_masks = self._find_total_segmentator_masks(image_path)
         if total_segmentator_masks:
             return total_segmentator_masks
@@ -202,6 +207,8 @@ class MedicalImageDataLoader:
         image_path: Path,
         output_shape: tuple[int, int],
     ) -> tuple[np.ndarray | None, int]:
+        # CheXmask는 CXR 마스크를 run-length encoding CSV column으로 저장한다.
+        # 예를 들어 left lung과 right lung처럼 여러 column은 OR 연산으로 하나의 GT 마스크로 합친다.
         if self.chexmask_csv is None:
             return None, 0
         if not self.chexmask_csv.exists():
@@ -329,6 +336,7 @@ class MedicalImageDataLoader:
         paths: Iterable[Path | str],
         image_size: tuple[int, int] | None = None,
     ) -> np.ndarray:
+        """하나 이상의 장기 부분 마스크를 로딩해 하나의 binary mask로 합친다."""
         masks = [MedicalImageDataLoader.load_mask(path, image_size) for path in paths]
         if not masks:
             raise ValueError("At least one mask path is required.")
@@ -348,6 +356,7 @@ class MedicalImageDataLoader:
         output_path: Path | str,
         reference_image_path: Path | str | None = None,
     ) -> Path:
+        """2D 마스크는 이미지로, 3D 마스크는 의료 volume 파일로 저장한다."""
         output_path = Path(output_path).expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         mask_binary = (mask > 0).astype(np.uint8)

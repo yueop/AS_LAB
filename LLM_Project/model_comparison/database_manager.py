@@ -208,6 +208,9 @@ class DatabaseManager:
     def __init__(self, config: PipelineConfig) -> None:
         self.config = config
         self.metrics_path = config.output_dir / "metrics_history.jsonl"
+        self.agent_metrics_path = (
+            config.agent_memory_dir / f"{_normalize_organ(config.target_organ)}_metrics_history.jsonl"
+        )
         self._collection = None
         self._fallback_specs = _load_specs_from_registry(config.model_registry_path)
         self._metric_aggregates = self._load_metric_aggregates()
@@ -391,18 +394,6 @@ class DatabaseManager:
             for spec in ranked
         ]
 
-    def update_metrics(self, model_name: str, new_dsc: float, new_iou: float | None = None) -> None:
-        metrics = {"dsc": float(new_dsc)}
-        if new_iou is not None:
-            metrics["iou"] = float(new_iou)
-        self.log_sample_metric(
-            query="",
-            sample_id="",
-            target_organ="",
-            model_name=model_name,
-            metrics=metrics,
-        )
-
     def log_sample_metric(
         self,
         query: str,
@@ -430,8 +421,14 @@ class DatabaseManager:
             "error": error,
         }
         self.config.output_dir.mkdir(parents=True, exist_ok=True)
-        with self.metrics_path.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        self.config.agent_memory_dir.mkdir(parents=True, exist_ok=True)
+        record_json = json.dumps(record, ensure_ascii=False) + "\n"
+        write_paths = [self.metrics_path]
+        if self.agent_metrics_path.resolve() != self.metrics_path.resolve():
+            write_paths.append(self.agent_metrics_path)
+        for path in write_paths:
+            with path.open("a", encoding="utf-8") as file:
+                file.write(record_json)
 
         if dsc is None:
             return
@@ -442,28 +439,43 @@ class DatabaseManager:
 
     def _load_metric_aggregates(self) -> dict[str, dict[str, float]]:
         aggregates: dict[str, dict[str, float]] = {}
-        if not self.metrics_path.exists():
-            return aggregates
+        seen_records: set[tuple[Any, ...]] = set()
+        metric_paths = [self.agent_metrics_path, self.metrics_path]
+        for path in dict.fromkeys(path.resolve() for path in metric_paths):
+            if not path.exists():
+                continue
 
-        with self.metrics_path.open("r", encoding="utf-8") as file:
-            for line in file:
-                try:
-                    record = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
+            with path.open("r", encoding="utf-8") as file:
+                for line in file:
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
 
-                model_name = record.get("model_name")
-                dsc = record.get("dsc")
-                iou = record.get("iou")
-                if not model_name or dsc is None:
-                    continue
+                    model_name = record.get("model_name")
+                    dsc = record.get("dsc")
+                    iou = record.get("iou")
+                    if not model_name or dsc is None:
+                        continue
 
-                self._add_metric_to_aggregate(
-                    aggregates=aggregates,
-                    model_name=str(model_name),
-                    dsc=float(dsc),
-                    iou=float(iou) if iou is not None else None,
-                )
+                    record_key = (
+                        record.get("sample_id"),
+                        record.get("target_organ"),
+                        model_name,
+                        dsc,
+                        iou,
+                        record.get("error"),
+                    )
+                    if record_key in seen_records:
+                        continue
+                    seen_records.add(record_key)
+
+                    self._add_metric_to_aggregate(
+                        aggregates=aggregates,
+                        model_name=str(model_name),
+                        dsc=float(dsc),
+                        iou=float(iou) if iou is not None else None,
+                    )
 
         return aggregates
 

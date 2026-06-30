@@ -17,8 +17,8 @@
     "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
-      "dsc": 0.9525,
-      "iou": 0.9093
+      "dsc": 0.9523,
+      "iou": 0.9111
     },
     "runtime": {
       "speed": "medium",
@@ -157,8 +157,8 @@
     "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
-      "dsc": 0.8495011943385737,
-      "iou": 0.7394710176407835
+      "dsc": 0.8168,
+      "iou": 0.6959
     },
     "runtime": {
       "speed": "medium",
@@ -353,8 +353,8 @@
     "selection_enabled": true,
     "metric_priority": "dsc",
     "validation_metrics": {
-      "dsc": 0.985,
-      "iou": 0.971
+      "dsc": 0.914,
+      "iou": 0.851
     },
     "runtime": {
       "speed": "medium",

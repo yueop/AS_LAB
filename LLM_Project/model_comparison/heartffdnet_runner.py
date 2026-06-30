@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -15,6 +16,10 @@ def _first_nifti(image_folder: Path) -> Path | None:
     return None
 
 
+def _conda_executable() -> str:
+    return os.getenv("CONDA_EXE") or shutil.which("conda") or "conda"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True)
@@ -24,8 +29,9 @@ def main() -> int:
     args = parser.parse_args()
 
     repo = Path(args.repo).expanduser().resolve()
+    conda_exe = _conda_executable()
     command = [
-        "conda",
+        conda_exe,
         "run",
         "-n",
         args.conda_env,
@@ -98,7 +104,7 @@ def main() -> int:
 
     helper_path = Path(__file__).resolve().with_name("heartffdnet_mesh_mask.py")
     postprocess_command = [
-        "conda",
+        conda_exe,
         "run",
         "-n",
         args.conda_env,

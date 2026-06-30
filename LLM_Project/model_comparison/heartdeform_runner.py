@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -25,6 +26,10 @@ def _clean_env() -> dict[str, str]:
     env.pop("PYTHONPATH", None)
     env.update({"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "ITK_NIFTI_SFORM_PERMISSIVE": "1"})
     return env
+
+
+def _conda_executable() -> str:
+    return os.getenv("CONDA_EXE") or shutil.which("conda") or "conda"
 
 
 def main() -> int:
@@ -75,7 +80,8 @@ def main() -> int:
     config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
 
     env = _clean_env()
-    command = ["conda", "run", "-n", args.conda_env, "python", "predict.py", "--config", str(config_path)]
+    conda_exe = _conda_executable()
+    command = [conda_exe, "run", "-n", args.conda_env, "python", "predict.py", "--config", str(config_path)]
     result = subprocess.run(command, cwd=str(repo), env=env, check=False)
     if result.returncode != 0:
         return int(result.returncode)
@@ -91,7 +97,7 @@ def main() -> int:
 
     helper_path = Path(__file__).resolve().with_name("heartffdnet_mesh_mask.py")
     postprocess_command = [
-        "conda",
+        conda_exe,
         "run",
         "-n",
         args.conda_env,
